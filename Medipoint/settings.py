@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app',  # Your app name here
+    'compressor',  # new
 ]
 
 MIDDLEWARE = [
@@ -114,8 +115,37 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.x/howto/static-files/
 
 STATIC_URL = '/static/'
-
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'app/static'),
+]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.x/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Add the COMPRESS_ROOT setting
+# Add the COMPRESS_ROOT setting
+COMPRESS_ROOT = os.path.join(BASE_DIR, 'app/static')
+COMPRESS_ENABLED = True
+
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+]
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]

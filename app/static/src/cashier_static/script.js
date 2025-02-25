@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
     // Initialize totals on page load
     updateTotals();
+    
   });
   
   // Theme toggle functionality with single icon button

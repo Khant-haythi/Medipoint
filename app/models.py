@@ -39,16 +39,22 @@ class Category(models.Model):
     
 class Product(models.Model):
 
-    product_code = models.CharField(max_length=20, unique=True)
+    product_id = models.AutoField(primary_key=True,default=1)
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    stock_quantity = models.PositiveIntegerField()
     productImage = models.ImageField(upload_to='products',blank=True, null=True)
 
-    def __str__(self):
-        return self.name
+    def serialize(self, current_user=None):
+        return {
+        'product_id': self.product_id,
+        'name': self.name,
+        'price': float(self.price),  # Convert Decimal to float for JSON
+        'description': self.description,
+        'category': self.category.name if self.category else None,  # Assuming Category has a name field
+        'productImage': self.productImage.url if self.productImage else None,
+    }
     
 # Sales Model
 class Sale(models.Model):

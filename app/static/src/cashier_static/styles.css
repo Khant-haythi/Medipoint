@@ -1,0 +1,45 @@
+/* Sidebar icon sizing when collapsed */
+#leftSidebar.w-16 .sidebar-icon {
+    width: 1.5rem; 
+    height: 1.5rem; 
+  }
+  
+  /* Style for active navigation link */
+  .nav-link.active {
+    color: #f56565; /* text-red-500 */
+  }
+  .nav-link.active.dark {
+    color: #f87171; /* dark:text-red-400 */
+  }
+  .nav-link.active .sidebar-icon {
+    fill: #f56565; /* fill-red-500 */
+    stroke: #f56565; /* stroke-red-500 */
+  }
+  .nav-link.active.dark .sidebar-icon {
+    fill: #f87171; /* dark:fill-red-400 */
+    stroke: #f87171; /* dark:stroke-red-400 */
+  }
+  
+  /* Ensure hover effect doesn’t override active state */
+  .nav-link:hover {
+    background-color: #e5e7eb; /* bg-gray-200 */
+  }
+  .nav-link:hover.dark {
+    background-color: #374151; /* dark:bg-gray-700 */
+  }
+  .nav-link.active:hover {
+    background-color: #e5e7eb; /* bg-gray-200 */
+    color: #f56565; /* text-red-500 */
+  }
+  .nav-link.active:hover.dark {
+    background-color: #374151; /* dark:bg-gray-700 */
+    color: #f87171; /* dark:text-red-400 */
+  }
+  .nav-link.active:hover .sidebar-icon {
+    fill: #f56565;
+    stroke: #f56565;
+  }
+  .nav-link.active:hover.dark .sidebar-icon {
+    fill: #f87171;
+    stroke: #f87171;
+  }

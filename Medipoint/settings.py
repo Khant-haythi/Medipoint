@@ -111,6 +111,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Media settings (for user-uploaded files like product images)
+MEDIA_URL = '/media/'  # URL that handles media files
+MEDIA_ROOT = BASE_DIR / 'media'  # Directory where media files are stored
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.x/howto/static-files/
 

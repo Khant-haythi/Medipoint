@@ -25,12 +25,7 @@
           </button>
         </div>
         <nav class="space-y-2" id="sidebarNav">
-          <button href="#" class="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded nav-link dark:text-gray-300 dark:hover:bg-gray-700" data-section="dashboard" id="dashboardLink">
-            <svg class="sidebar-icon w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-            </svg>
-            <span class="sidebar-text">Dashboard</span>
-          </button>
+        
           <button href="#" class="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded nav-link dark:text-gray-300 dark:hover:bg-gray-700" data-section="menu" id="menuLink">
             <svg class="sidebar-icon w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -43,12 +38,7 @@
             </svg>
             <span class="sidebar-text">History</span>
           </button>
-          <button href="#" class="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded nav-link dark:text-gray-300 dark:hover:bg-gray-700" data-section="wallet" id="walletLink">
-            <svg class="sidebar-icon w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-            </svg>
-            <span class="sidebar-text">Wallet</span>
-          </button>
+    
           <button href="#" class="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded nav-link dark:text-gray-300 dark:hover:bg-gray-700" data-section="promotion" id="promotionLink">
             <svg class="sidebar-icon w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
@@ -63,12 +53,7 @@
               </svg>
               <span class="sidebar-text">Settings</span>
             </button>
-            <button class="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="sidebar-icon w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-              </svg>
-              <span class="sidebar-text">Give Rating</span>
-            </button>
+        
           </div>
         </nav>
         <div class="mt-4">
@@ -91,13 +76,13 @@
           />
         </div>
 
-        <!-- Sections (Hidden/Shown dynamically) -->
+        {% comment %} <!-- Sections (Hidden/Shown dynamically) -->
         <section id="dashboard" class="section-content hidden">
           <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Dashboard</h1>
           <p class="text-gray-600 mb-6 dark:text-gray-400">
             Welcome to the dashboard. Manage your restaurant stats here.
           </p>
-        </section>
+        </section> {% endcomment %}
 
         <!-- Main menu Items -->
         <section id="menu" class="section-content">
@@ -105,258 +90,12 @@
           <p class="text-gray-600 mb-6 dark:text-gray-400">
             Discover whatever you need easily
           </p>
-          <div
-            class="max-h-[calc(100vh-200px)] overflow-y-auto"
-            id="menuItemsContainer"
-          >
-            <div
-              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
-              id="menuItems"
-            >
-              <!-- Burger Items (with cart icon button) -->
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Big Mac"
-                data-price="1.99"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Big Mac"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Big Mac
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$1.99</p>
-                <span class="text-sm text-gray-500 dark:text-gray-400"
-                  >NEW</span
-                >
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Big Burg"
-                data-price="2.69"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Big Burg"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Big Burg
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$2.69</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Double Big"
-                data-price="3.21"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Double Big"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Double Big
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$3.21</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Origin Burger"
-                data-price="0.99"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Origin Burger"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Origin Burger
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$0.99</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Large Cheese"
-                data-price="2.11"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Large Cheese"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Large Cheese
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$2.11</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Small Burger"
-                data-price="0.23"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Small Burger"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Small Burger
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$0.23</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Very Small"
-                data-price="1.23"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Very Small"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Very Small
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$1.23</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Big Burger Duo"
-                data-price="4.21"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Big Burger Duo"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Big Burger Duo
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$4.21</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Vegetable"
-                data-price="2.11"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Vegetable"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Vegetable
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$2.11</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Triple Cheese"
-                data-price="5.21"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Triple Cheese"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Triple Cheese
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$5.21</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Medium"
-                data-price="3.41"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Medium"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">Medium</h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$3.41</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-              <div
-                class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700"
-                data-name="Difficult Burger"
-                data-price="8.21"
-              >
-                <img
-                  src="https://via.placeholder.com/150"
-                  alt="Difficult Burger"
-                  class="mb-2 rounded"
-                />
-                <h3 class="text-lg font-semibold dark:text-gray-200">
-                  Difficult Burger
-                </h3>
-                <p class="text-red-500 font-bold dark:text-red-400">$8.21</p>
-                <button
-                  class="mt-2 bg-green-500 text-white p-2 rounded hover:bg-green-600 dark:bg-green-600 add-to-order-btn"
-                >
-                  🛒 Add to Order
-                </button>
-              </div>
-            </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="menuItems">
+            <!-- Menu items will be dynamically inserted here via JavaScript -->
           </div>
+         
+            
+
         </section>
 
         <!-- Burger Items -->
@@ -368,12 +107,12 @@
           </p>
         </section>
 
-        <section id="wallet" class="section-content hidden">
+        {% comment %} <section id="wallet" class="section-content hidden">
           <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Wallet</h1>
           <p class="text-gray-600 mb-6 dark:text-gray-400">
             Manage your payment methods and balance.
           </p>
-        </section>
+        </section> {% endcomment %}
 
         <section id="promotion" class="section-content hidden">
           <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Promotion</h1>
@@ -391,68 +130,9 @@
         <p class="text-gray-600 mb-4 dark:text-gray-400">Take out</p>
         <!-- Order Items (Scrollable if more than 7 items) -->
         <div class="mb-4 flex-1" id="orderItemsContainer">
-          <div
-            class="order-item flex justify-between items-center mb-2"
-            data-price="1.99"
-          >
-            <div>
-              <h3 class="text-lg font-semibold dark:text-gray-200">Big Mac</h3>
-              <p class="text-gray-500 text-sm dark:text-gray-400">$1.99</p>
-            </div>
-            <div class="flex items-center space-x-2">
-              <button
-                class="bg-gray-200 p-1 rounded dark:bg-gray-700 minus-btn"
-              >
-                -
-              </button>
-              <span class="mx-2 quantity dark:text-gray-200">1</span>
-              <button class="bg-gray-200 p-1 rounded dark:bg-gray-700 plus-btn">
-                +
-              </button>
-            </div>
-          </div>
-          <div
-            class="order-item flex justify-between items-center mb-2"
-            data-price="2.69"
-          >
-            <div>
-              <h3 class="text-lg font-semibold dark:text-gray-200">Big Burg</h3>
-              <p class="text-gray-500 text-sm dark:text-gray-400">$2.69</p>
-            </div>
-            <div class="flex items-center space-x-2">
-              <button
-                class="bg-gray-200 p-1 rounded dark:bg-gray-700 minus-btn"
-              >
-                -
-              </button>
-              <span class="mx-2 quantity dark:text-gray-200">1</span>
-              <button class="bg-gray-200 p-1 rounded dark:bg-gray-700 plus-btn">
-                +
-              </button>
-            </div>
-          </div>
-          <div
-            class="order-item flex justify-between items-center mb-2"
-            data-price="0.69"
-          >
-            <div>
-              <h3 class="text-lg font-semibold dark:text-gray-200">
-                Origin Burger
-              </h3>
-              <p class="text-gray-500 text-sm dark:text-gray-400">$0.69</p>
-            </div>
-            <div class="flex items-center space-x-2">
-              <button
-                class="bg-gray-200 p-1 rounded dark:bg-gray-700 minus-btn"
-              >
-                -
-              </button>
-              <span class="mx-2 quantity dark:text-gray-200">1</span>
-              <button class="bg-gray-200 p-1 rounded dark:bg-gray-700 plus-btn">
-                +
-              </button>
-            </div>
-          </div>
+          
+           
+
         </div>
         <!-- Order Summary (Stays at the bottom) -->
         <div class="mt-auto">

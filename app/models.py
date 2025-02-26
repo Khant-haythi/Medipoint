@@ -38,8 +38,6 @@ class Category(models.Model):
         return self.name
     
 class Product(models.Model):
-
-    product_id = models.AutoField(primary_key=True,default=1)
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
@@ -48,7 +46,7 @@ class Product(models.Model):
 
     def serialize(self, current_user=None):
         return {
-        'product_id': self.product_id,
+
         'name': self.name,
         'price': float(self.price),  # Convert Decimal to float for JSON
         'description': self.description,
@@ -68,7 +66,7 @@ class Sale(models.Model):
 class SaleDetail(models.Model):
     sale_detail_id = models.AutoField(primary_key=True)
     sale_id = models.ForeignKey(Sale, on_delete=models.CASCADE)
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product= models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
 

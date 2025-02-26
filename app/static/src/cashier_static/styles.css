@@ -1,45 +1,143 @@
-/* Sidebar icon sizing when collapsed */
-#leftSidebar.w-16 .sidebar-icon {
-    width: 1.5rem; 
-    height: 1.5rem; 
-  }
-  
-  /* Style for active navigation link */
-  .nav-link.active {
-    color: #f56565; /* text-red-500 */
-  }
-  .nav-link.active.dark {
-    color: #f87171; /* dark:text-red-400 */
-  }
-  .nav-link.active .sidebar-icon {
-    fill: #f56565; /* fill-red-500 */
-    stroke: #f56565; /* stroke-red-500 */
-  }
-  .nav-link.active.dark .sidebar-icon {
-    fill: #f87171; /* dark:fill-red-400 */
-    stroke: #f87171; /* dark:stroke-red-400 */
-  }
-  
-  /* Ensure hover effect doesn’t override active state */
-  .nav-link:hover {
-    background-color: #e5e7eb; /* bg-gray-200 */
-  }
-  .nav-link:hover.dark {
-    background-color: #374151; /* dark:bg-gray-700 */
-  }
-  .nav-link.active:hover {
-    background-color: #e5e7eb; /* bg-gray-200 */
-    color: #f56565; /* text-red-500 */
-  }
-  .nav-link.active:hover.dark {
-    background-color: #374151; /* dark:bg-gray-700 */
-    color: #f87171; /* dark:text-red-400 */
-  }
-  .nav-link.active:hover .sidebar-icon {
-    fill: #f56565;
-    stroke: #f56565;
-  }
-  .nav-link.active:hover.dark .sidebar-icon {
-    fill: #f87171;
-    stroke: #f87171;
-  }
+/* Ensure consistent menu item card layout */
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 20rem; /* Equivalent to max-w-sm in Tailwind */
+  height: 100%; /* Ensure cards have consistent height */
+  min-height: 28rem; /* Adjust to match your design, ensuring space for all content */
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+  transition: box-shadow 0.3s; /* transition-shadow */
+}
+
+.menu-item:hover {
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.1); /* hover:shadow-lg */
+}
+
+.menu-item.dark {
+  background-color: #1f2937; /* dark:bg-gray-800 */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* dark:shadow-gray-700 */
+}
+
+/* Style menu item images (no padding at the top) */
+.menu-item img {
+  width: 100%; /* w-full */
+  height: 14rem; /* h-56, 224px */
+  object-fit: cover; /* Maintain aspect ratio and fill the space */
+  border-top-left-radius: 0.375rem; /* rounded-t-lg */
+  border-top-right-radius: 0.375rem; /* rounded-t-lg */
+  margin-bottom: 0; /* Remove margin to eliminate padding between image and card border */
+}
+
+/* Style the content area below the image */
+.menu-item .p-4 {
+  padding: 1rem; /* p-4 for the lower part only */
+}
+
+/* Center and style text elements */
+.menu-item h3 {
+  text-align: left; /* Left-align for name */
+  margin-bottom: 0.5rem; /* mb-2 */
+  font-size: 1.125rem; /* text-lg */
+  color: #374151; /* text-gray-700 */
+}
+
+.menu-item h3.dark {
+  color: #d1d5db; /* dark:text-gray-200 */
+}
+
+.menu-item p {
+  text-align: left; /* Left-align for price */
+  margin-bottom: 0; /* Remove mb-2 to align with cart icon height */
+  font-size: 1rem; /* font-bold */
+  color: #f56565; /* text-red-500 */
+}
+
+.menu-item p.dark {
+  color: #f87171; /* dark:text-red-400 */
+}
+
+/* Style the "Add to Order" button (cart icon only) with orange-red color and white icon */
+.add-to-order-btn {
+  background-color: #f56565; /* bg-red-500, orange-red in light mode */
+  padding: 0.5rem; /* p-2 */
+  border-radius: 0.375rem; /* rounded */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem; /* w-10, sized to match text height */
+  height: 2.5rem; /* h-10, sized to match text height */
+}
+
+.add-to-order-btn:hover {
+  background-color: #e53e3e; /* hover:bg-red-600, darker orange-red */
+}
+
+.add-to-order-btn.dark {
+  background-color: #f87171; /* dark:bg-red-400, orange-red in dark mode */
+}
+
+.add-to-order-btn.dark:hover {
+  background-color: #ef4444; /* dark:hover:bg-red-500, darker orange-red in dark mode */
+}
+
+/* Ensure SVG cart icon is white and scales to match text height */
+.add-to-order-btn svg {
+  width: 2rem; /* w-8, adjusted to match combined height of name and price */
+  height: 2rem; /* h-8, adjusted to match combined height of name and price */
+  fill: white; /* Ensure cart icon is white */
+}
+
+/* Style the flex container for name, price, and cart icon */
+.menu-item .flex {
+  width: 100%;
+  gap: 1rem; /* Space between left text and right cart icon */
+  align-items: center; /* Ensure vertical alignment of text and icon */
+}
+
+/* Ensure text div height matches cart icon */
+.menu-item .flex > div {
+  min-height: 2.5rem; /* Match the height of the cart button to align properly */
+}
+
+
+
+/* Ensure SVG cart icon scales with button */
+.add-to-order-btn svg {
+  width: 1.5rem; /* w-6 */
+  height: 1.5rem; /* h-6 */
+}
+
+/* Style the flex container for name, price, and cart icon */
+.menu-item .flex {
+  width: 100%;
+  gap: 1rem; /* Space between left text and right cart icon */
+}
+/* Center and style text elements */
+.menu-item h3 {
+  text-align: center;
+  margin-bottom: 0.5rem; /* mb-2 */
+}
+
+.menu-item p {
+  text-align: center;
+  margin-bottom: 0.5rem; /* mb-2 */
+}
+
+.menu-item span {
+  text-align: center;
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+/* Style the category badge */
+.menu-item span {
+  background-color: #d1fae5; /* bg-green-100 */
+  padding: 0.25rem 0.5rem; /* px-2 py-1 */
+  border-radius: 9999px; /* rounded-full */
+  width: 6rem; /* w-24, 96px */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+

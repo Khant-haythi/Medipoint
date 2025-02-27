@@ -45,41 +45,39 @@ async function fetchMenuData() {
 }
 
 // Function to update menu items in the UI
-
-// Function to update menu items in the UI
 function updateMenuItems(products) {
   const menuItemsContainer = document.getElementById("menuItems");
   menuItemsContainer.innerHTML = ""; // Clear existing dummy data
 
   products.forEach(product => {
     const itemDiv = document.createElement("div");
-    itemDiv.className = "bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow menu-item dark:bg-gray-800 dark:shadow-gray-700 flex flex-col w-full max-w-sm"; // Consistent card size
+    itemDiv.className = "menu-item flex flex-col w-full max-w-sm"; // Base class for custom styling in styles.css
     itemDiv.setAttribute("data-name", product.name);
     itemDiv.setAttribute("data-price", product.price); // Use price directly, no division
 
     const priceDisplay = `$${product.price.toFixed(2)}`; // Format as dollars
 
     // Assuming the category is available in the product data (e.g., product.category)
-    // If not, you can hardcode or fetch it differently—here I’ll assume it’s "category" in the product object
     const category = product.category || "Category"; // Default to "Category" if not available
 
     itemDiv.innerHTML = `
       <img src="${product.productImage}" alt="${product.name}" class="w-full h-56 object-cover rounded-t-lg" onerror="this.src='https://via.placeholder.com/150';">
-      <div class="p-4 flex flex-col items-start w-full"> <!-- Left-aligned content -->
-        <div class="flex flex-col space-y-1">
-          <p class="text-sm font-medium text-red-500 dark:text-red-400">${category}</p> <!-- Red category text -->
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-200">${product.name}</h3> <!-- Product name -->
-          <p class="text-gray-600 font-bold dark:text-gray-300">${priceDisplay}</p> <!-- Price in gray, not red -->
+      <div class="p-4">
+        <p class="text-sm mb-2">${category}</p> <!-- Category above, left-aligned, separate -->
+        <div class="flex justify-between "> <!-- Horizontal layout for name, price, and cart button -->
+          <div class=" flex-col space-y-1"> <!-- Stack and left-align name and price -->
+            <h3 class="text-lg">${product.name}</h3> <!-- Product name -->
+            <p class="text-gray-600">${priceDisplay}</p> <!-- Price -->
+          </div>
+          <button class="add-to-order-btn">
+            <svg class="w-5 h-5" fill="white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-0.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-0.16.28-0.25.61-0.25.96 0 1.1.9 2 2 2h12v-2H7.42c-0.14 0-0.25-0.11-0.25-0.25l0.03-0.12.9-1.63h7.45c0.75 0 1.41-0.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-0.9-2-2-2z"/>
+            </svg>
+          </button>
         </div>
-        <button class="bg-red-500 p-2 rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 add-to-order-btn flex items-center justify-center w-12 h-10 mt-4"> <!-- Wider button for cart icon -->
-          <svg class="w-5 h-5" fill="white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-0.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-0.16.28-0.25.61-0.25.96 0 1.1.9 2 2 2h12v-2H7.42c-0.14 0-0.25-0.11-0.25-0.25l0.03-0.12.9-1.63h7.45c0.75 0 1.41-0.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-0.9-2-2-2z"/>
-          </svg>
-        </button>
       </div>
     `;
     menuItemsContainer.appendChild(itemDiv);
-    console.log(itemDiv.innerHTML);
   });
 
   // Reattach event listeners for new "Add to Order" buttons

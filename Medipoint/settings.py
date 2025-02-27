@@ -153,3 +153,5 @@ TEMPLATES = [
         },
     },
 ]
+
+LOGOUT_REDIRECT_URL = '/'

@@ -1,34 +1,18 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
 
 
-class User(AbstractUser):
-    ROLE_CHOICES = (
+
+class EmployeeProfile(models.Model):
+    USER_ROLES = (
         ('admin', 'Admin'),
         ('cashier', 'Cashier'),
     )
-    STATUS_CHOICES = (
-        ('active', 'Active'),
-        ('inactive', 'Inactive'),
-    )
-
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='cashier')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
-
-    # Fix group and permission conflicts
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='custom_user_groups',
-        blank=True
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='custom_user_permissions',
-        blank=True
-    )
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=10, choices=USER_ROLES, default='cashier')
 
     def __str__(self):
-        return f"{self.username} ({self.role})"
+        return f"{self.user.username} - {self.role}"
 
 class Category(models.Model):
 
@@ -36,8 +20,14 @@ class Category(models.Model):
 
     def __str__ (self):
         return self.name
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+        }
     
 class Product(models.Model):
+
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
@@ -47,28 +37,11 @@ class Product(models.Model):
     def serialize(self, current_user=None):
         return {
 
+ 
         'name': self.name,
         'price': float(self.price),  # Convert Decimal to float for JSON
         'description': self.description,
         'category': self.category.name if self.category else None,  # Assuming Category has a name field
         'productImage': self.productImage.url if self.productImage else None,
     }
-    
-# Sales Model
-class Sale(models.Model):
-    sale_id = models.AutoField(primary_key=True)
-    invoice_no = models.CharField(max_length=20, unique=True)
-    cashier_id = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'cashier'})
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-# Sale Details Model
-class SaleDetail(models.Model):
-    sale_detail_id = models.AutoField(primary_key=True)
-    sale_id = models.ForeignKey(Sale, on_delete=models.CASCADE)
-    product= models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-
-
     

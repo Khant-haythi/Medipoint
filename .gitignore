@@ -25,7 +25,7 @@ media/
 *.js.map
 
 # Ignore Django migrations
-*/migrations/*
+**/migrations/*
 
 # Ignore IDE specific files
 .vscode/

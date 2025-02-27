@@ -55,18 +55,17 @@ function updateMenuItems(products) {
     itemDiv.setAttribute("data-name", product.name);
     itemDiv.setAttribute("data-price", product.price); // Use price directly, no division
 
-    const priceDisplay = `$${product.price}`; 
+    const priceDisplay = `$${product.price.toFixed(2)}`; // Format as dollars
 
     itemDiv.innerHTML = `
-      <img src="${product.productImage}" alt="${product.name}" class="w-full h-56 object-cover rounded-t-lg" >
+      <img src="${product.productImage}" alt="${product.name}" class="w-full h-56 object-cover rounded-t-lg" onerror="this.src='https://via.placeholder.com/150';">
       <div class="p-4 flex justify-between items-center w-full">
         <div class="flex flex-col">
           <h3 class="text-lg font-semibold dark:text-gray-200 mb-2">${product.name}</h3>
           <p class="text-red-500 font-bold dark:text-red-400">${priceDisplay}</p>
         </div>
         <button class="bg-red-500 p-2 rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 add-to-order-btn flex items-center justify-center">
-        
-     <svg class="w-8 h-8" fill="white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg class="w-8 h-8" fill="white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <path d="M15.55 13c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 19.54 4H4.77L4.4 2.74A1.003 1.003 0 0 0 3.45 2H2v2h1.45l3.68 6.97c.24.45.66.75 1.13.75H15.55zM5.55 13l-.6-2h11.5l-.69 1.25c-.19.35-.53.58-.91.58H5.55zM6 17c0 1.1.9 2 2 2s2-.9 2-2-2-2-2-2-2 .9-2 2zm10 0c0 1.1.9 2 2 2s2-.9 2-2-2-2-2-2-2 .9-2 2z"/>
 </svg>
         </button>

@@ -10,7 +10,7 @@
     <!-- Flowbite CSS CDN -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
     <!-- Link to external styles.css -->
-    <link rel="stylesheet" href="{% static 'src/cashier_static/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'src/cashier_static/styles.css' %}" />
   </head>
   <body class="bg-gray-100 font-sans">
     <div class="flex h-screen">
@@ -25,7 +25,6 @@
           </button>
         </div>
         <nav class="space-y-2" id="sidebarNav">
-        
           <button href="#" class="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded nav-link dark:text-gray-300 dark:hover:bg-gray-700" data-section="menu" id="menuLink">
             <svg class="sidebar-icon w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -38,7 +37,6 @@
             </svg>
             <span class="sidebar-text">History</span>
           </button>
-    
           <button href="#" class="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded nav-link dark:text-gray-300 dark:hover:bg-gray-700" data-section="promotion" id="promotionLink">
             <svg class="sidebar-icon w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
@@ -53,7 +51,6 @@
               </svg>
               <span class="sidebar-text">Settings</span>
             </button>
-        
           </div>
         </nav>
         <div class="mt-4">
@@ -76,29 +73,18 @@
           />
         </div>
 
-        {% comment %} <!-- Sections (Hidden/Shown dynamically) -->
-        <section id="dashboard" class="section-content hidden">
-          <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Dashboard</h1>
-          <p class="text-gray-600 mb-6 dark:text-gray-400">
-            Welcome to the dashboard. Manage your restaurant stats here.
-          </p>
-        </section> {% endcomment %}
-
-        <!-- Main menu Items -->
+        <!-- Sections (Hidden/Shown dynamically) -->
         <section id="menu" class="section-content">
           <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Hamburger</h1>
           <p class="text-gray-600 mb-6 dark:text-gray-400">
             Discover whatever you need easily
           </p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="menuItems">
-            <!-- Menu items will be dynamically inserted here via JavaScript -->
+          <div class="max-h-[calc(100vh-200px)] overflow-y-auto" id="menuItemsContainer">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="menuItems">
+              <!-- Menu items will be dynamically inserted here via JavaScript -->
+            </div>
           </div>
-         
-            
-
         </section>
-
-        <!-- Burger Items -->
 
         <section id="history" class="section-content hidden">
           <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">History</h1>
@@ -106,13 +92,6 @@
             View your order history here.
           </p>
         </section>
-
-        {% comment %} <section id="wallet" class="section-content hidden">
-          <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Wallet</h1>
-          <p class="text-gray-600 mb-6 dark:text-gray-400">
-            Manage your payment methods and balance.
-          </p>
-        </section> {% endcomment %}
 
         <section id="promotion" class="section-content hidden">
           <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Promotion</h1>
@@ -123,35 +102,29 @@
       </main>
 
       <!-- Right Sidebar (Order Summary) -->
-      <aside
-        class="w-80 bg-white shadow-md p-4 dark:bg-gray-800 dark:shadow-gray-700 flex flex-col h-full"
-      >
+      <aside class="w-80 bg-white shadow-md p-4 dark:bg-gray-800 dark:shadow-gray-700 flex flex-col h-full">
         <h2 class="text-xl font-bold mb-4 dark:text-gray-200">My Order</h2>
         <p class="text-gray-600 mb-4 dark:text-gray-400">Take out</p>
         <!-- Order Items (Scrollable if more than 7 items) -->
         <div class="mb-4 flex-1" id="orderItemsContainer">
-          
-           
-
+          <!-- Order items will be dynamically inserted here via JavaScript -->
         </div>
         <!-- Order Summary (Stays at the bottom) -->
         <div class="mt-auto">
           <div class="border-t pt-4 dark:border-gray-700">
             <div class="flex justify-between mb-2">
               <span class="dark:text-gray-200">Subtotal</span>
-              <span class="subtotal dark:text-gray-200">$4.68</span>
+              <span class="subtotal dark:text-gray-200">$0.00</span>
             </div>
             <div class="flex justify-between mb-2">
               <span class="dark:text-gray-200">Tax (10%)</span>
-              <span class="tax dark:text-gray-200">$0.68</span>
+              <span class="tax dark:text-gray-200">$0.00</span>
             </div>
             <div class="flex justify-between font-bold text-lg">
               <span class="dark:text-gray-200">Total</span>
-              <span class="total dark:text-gray-200">$5.34</span>
+              <span class="total dark:text-gray-200">$0.00</span>
             </div>
-            <button
-              class="w-full bg-red-500 text-white p-2 rounded mt-4 hover:bg-red-600 dark:bg-red-600"
-            >
+            <button class="w-full bg-red-500 text-white p-2 rounded mt-4 hover:bg-red-600 dark:bg-red-600 print-bills-btn">
               Print Bills
             </button>
           </div>

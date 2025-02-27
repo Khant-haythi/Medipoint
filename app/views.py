@@ -26,6 +26,6 @@ def showproduct(request):
         'products': serialized_products,
     }
     
-    print(data)  # For debugging
+    # print(data)  # For debugging
     return JsonResponse(data)
 

@@ -1,18 +1,29 @@
 import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules
+from .models import Transaction
 
-def perform_market_basket_analysis(csv_path):
-    # Read the CSV file
-    try:
-        df = pd.read_csv(csv_path)
-        # Assuming CSV has 'InvoiceNo' and 'Item' columns
-        basket = (df.groupby(['InvoiceNo', 'Item'])['Item']
-                  .count().unstack().reset_index().fillna(0)
-                  .set_index('InvoiceNo'))
-        # Encode to 0/1
-        basket = basket.applymap(lambda x: 1 if x > 0 else 0)
-    except Exception as e:
-        return {"error": f"Error reading CSV: {str(e)}"}
+def perform_market_basket_analysis(data_source='db', csv_path=None):
+    # Fetch data based on source
+    if data_source == 'db':
+        df = pd.DataFrame(Transaction.objects.all().values('invoice_no', 'item'))
+    elif data_source == 'csv' and csv_path:
+        try:
+            df = pd.read_csv(csv_path)
+            if not {'invoice_no', 'item'}.issubset(df.columns):
+                return {"error": "CSV must contain 'invoice_no' and 'item' columns"}
+        except Exception as e:
+            return {"error": f"Error reading CSV: {str(e)}"}
+    else:
+        return {"error": "No valid data source provided"}
+    
+    if df.empty:
+        return {"error": "No transaction data available"}
+    
+    # Create basket matrix
+    basket = (df.groupby(['invoice_no', 'item'])['item']
+              .count().unstack().reset_index().fillna(0)
+              .set_index('invoice_no'))
+    basket = basket.applymap(lambda x: 1 if x > 0 else 0)
     
     # Run Apriori algorithm
     frequent_itemsets = apriori(basket, min_support=0.01, use_colnames=True)
@@ -25,12 +36,3 @@ def perform_market_basket_analysis(csv_path):
     recommendations['consequents'] = recommendations['consequents'].apply(lambda x: ', '.join(list(x)))
     
     return recommendations.to_dict('records')
-
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1:
-        csv_path = sys.argv[1]
-        results = perform_market_basket_analysis(csv_path)
-        print(results)
-    else:
-        print("Please provide a CSV file path")

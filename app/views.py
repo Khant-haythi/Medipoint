@@ -9,6 +9,7 @@ from .models import Product,EmployeeProfile
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.core.files.storage import FileSystemStorage
 
 # Login view
 def login_view(request):
@@ -103,3 +104,26 @@ def showproduct(request):
     # print(data)  # For debugging
     return JsonResponse(data)
 
+@login_required
+def mba_recommendations(request):
+    profile = EmployeeProfile.objects.get(user=request.user)
+    if profile.role != 'admin':
+        messages.error(request, 'Only admins can access recommendations.')
+        return redirect('admin_dashboard')
+    
+    recommendations = None
+    if request.method == 'POST':
+        from .market_basket import perform_market_basket_analysis
+        if 'analyze_csv' in request.POST and request.FILES.get('csv_file'):
+            csv_file = request.FILES['csv_file']
+            if not csv_file.name.endswith('.csv'):
+                messages.error(request, 'Please upload a valid CSV file.')
+            else:
+                fs = FileSystemStorage(location='media/uploads')
+                filename = fs.save(csv_file.name, csv_file)
+                file_path = fs.path(filename)
+                recommendations = perform_market_basket_analysis(data_source='csv', csv_path=file_path)
+        elif 'analyze_db' in request.POST:
+            recommendations = perform_market_basket_analysis(data_source='db')
+    
+    return render(request, 'manager/mba_recommendation.html', {'recommendations': recommendations})

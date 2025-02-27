@@ -45,3 +45,11 @@ class Product(models.Model):
         'productImage': self.productImage.url if self.productImage else None,
     }
     
+class Transaction(models.Model):
+    invoice_no = models.CharField(max_length=50, unique=True)  # Unique invoice ID
+    item = models.CharField(max_length=100)  # Single item per row
+    quantity = models.PositiveIntegerField(default=1)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.invoice_no} - {self.item}"

@@ -45,6 +45,8 @@ async function fetchMenuData() {
 }
 
 // Function to update menu items in the UI
+
+// Function to update menu items in the UI
 function updateMenuItems(products) {
   const menuItemsContainer = document.getElementById("menuItems");
   menuItemsContainer.innerHTML = ""; // Clear existing dummy data
@@ -55,24 +57,29 @@ function updateMenuItems(products) {
     itemDiv.setAttribute("data-name", product.name);
     itemDiv.setAttribute("data-price", product.price); // Use price directly, no division
 
-    const priceDisplay = `$${product.price}`; 
+    const priceDisplay = `$${product.price.toFixed(2)}`; // Format as dollars
+
+    // Assuming the category is available in the product data (e.g., product.category)
+    // If not, you can hardcode or fetch it differently—here I’ll assume it’s "category" in the product object
+    const category = product.category || "Category"; // Default to "Category" if not available
 
     itemDiv.innerHTML = `
-      <img src="${product.productImage}" alt="${product.name}" class="w-full h-56 object-cover rounded-t-lg" >
-      <div class="p-4 flex justify-between items-center w-full">
-        <div class="flex flex-col">
-          <h3 class="text-lg font-semibold dark:text-gray-200 mb-2">${product.name}</h3>
-          <p class="text-red-500 font-bold dark:text-red-400">${priceDisplay}</p>
+      <img src="${product.productImage}" alt="${product.name}" class="w-full h-56 object-cover rounded-t-lg" onerror="this.src='https://via.placeholder.com/150';">
+      <div class="p-4 flex flex-col items-start w-full"> <!-- Left-aligned content -->
+        <div class="flex flex-col space-y-1">
+          <p class="text-sm font-medium text-red-500 dark:text-red-400">${category}</p> <!-- Red category text -->
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-200">${product.name}</h3> <!-- Product name -->
+          <p class="text-gray-600 font-bold dark:text-gray-300">${priceDisplay}</p> <!-- Price in gray, not red -->
         </div>
-        <button class="bg-red-500 p-2 rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 add-to-order-btn flex items-center justify-center">
-        
-     <svg class="w-8 h-8" fill="white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-  <path d="M15.55 13c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 19.54 4H4.77L4.4 2.74A1.003 1.003 0 0 0 3.45 2H2v2h1.45l3.68 6.97c.24.45.66.75 1.13.75H15.55zM5.55 13l-.6-2h11.5l-.69 1.25c-.19.35-.53.58-.91.58H5.55zM6 17c0 1.1.9 2 2 2s2-.9 2-2-2-2-2-2-2 .9-2 2zm10 0c0 1.1.9 2 2 2s2-.9 2-2-2-2-2-2-2 .9-2 2z"/>
-</svg>
+        <button class="bg-red-500 p-2 rounded hover:bg-red-600 dark:bg-red-400 dark:hover:bg-red-500 add-to-order-btn flex items-center justify-center w-12 h-10 mt-4"> <!-- Wider button for cart icon -->
+          <svg class="w-5 h-5" fill="white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-0.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-0.16.28-0.25.61-0.25.96 0 1.1.9 2 2 2h12v-2H7.42c-0.14 0-0.25-0.11-0.25-0.25l0.03-0.12.9-1.63h7.45c0.75 0 1.41-0.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-0.9-2-2-2z"/>
+          </svg>
         </button>
       </div>
     `;
     menuItemsContainer.appendChild(itemDiv);
+    console.log(itemDiv.innerHTML);
   });
 
   // Reattach event listeners for new "Add to Order" buttons
@@ -103,7 +110,6 @@ function updateMenuItems(products) {
     });
   });
 }
-
 // Theme toggle functionality with single icon button
 document.getElementById("themeToggle").addEventListener("click", () => {
   const isDark = document.documentElement.classList.toggle("dark");

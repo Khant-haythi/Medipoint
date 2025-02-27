@@ -1,42 +1,82 @@
+import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 import os
+import sys
 import django
+import json
 
-# Set up Django environment
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Medipoint.settings")  # Replace with your project name
-django.setup()
+# Dynamically set up Python path for standalone use
+if 'RUN_MAIN' not in os.environ:
+    # Get the directory where recommendations.py is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Add the parent directory (Medipoint) to sys.path
+    project_root = os.path.dirname(script_dir)  # Points to Medipoint/
+    sys.path.append(project_root)
+    # Add the app directory explicitly
+    sys.path.append(os.path.join(project_root, 'app'))
 
-from app.models import Transaction  # Adjust to your app
+    # Set up Django for standalone use
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Medipoint.settings")  # Replace with your project name
+    django.setup()
 
-# Preprocess function
-def preprocess_breadbasket():
-    # Load the dataset
-    file_path = 'BreadBasket_DMS.csv'  # Update with your file path
-    df = pd.read_csv(file_path)
+from market_basket import perform_market_basket_analysis  # Use absolute import
 
-    # Rename columns to match your model
-    df.rename(columns={'Transaction': 'invoice_no', 'Item': 'item'}, inplace=True)
-    
-    # Optional: Filter for bakery-relevant items (keep all for now)
-    # bakery_items = ['Bread', 'Pastry', 'Muffin', 'Cookies', 'Scandinavian', 'Medialuna']  # Add more as needed
-    # df = df[df['item'].isin(bakery_items)]
+# Set page configuration for a cleaner look
+st.set_page_config(page_title="Everyes POS - Market Basket Analysis", layout="wide", initial_sidebar_state="collapsed")
 
-    # Remove any empty or irrelevant rows (e.g., 'NONE' items if present)
-    df = df[df['item'] != 'NONE'].dropna(subset=['item'])
+st.title("Everyes POS - Market Basket Analysis & Sales Insights")
 
-    # Ensure invoice_no is numeric (as integers)
-    df['invoice_no'] = df['invoice_no'].astype(int)
+# Back button to return to Django admin dashboard
+st.markdown(
+    """
+    <a href="http://127.0.0.1:8000/admin-dashboard/" target="_self" 
+       class="text-white bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 focus:ring-4 focus:outline-none focus:ring-red-300 font-semibold rounded-full text-sm px-6 py-3 mb-6 inline-block transform hover:scale-105 transition-transform duration-300">
+        Back to Admin Dashboard
+    </a>
+    """,
+    unsafe_allow_html=True
+)
 
-    # Save as CSV for upload (optional)
-    output_csv = 'bakery_transactions.csv'
-    df.to_csv(output_csv, index=False)
-    print(f'Saved preprocessed data to {output_csv}')
+# Get data source from command-line argument or default to database
+if len(sys.argv) > 1:
+    data_source = 'csv'
+    csv_path = sys.argv[1]
+    # Debug: Print the CSV path received
+    st.write(f"Analyzing CSV from: {csv_path}")
+else:
+    data_source = 'db'
+    csv_path = None
 
-    # Optionally load into Django database
-    Transaction.objects.all().delete()  # Clear existing data (for testing)
-    for _, row in df.iterrows():
-        Transaction.objects.create(invoice_no=row['invoice_no'], item=row['item'])
-    print('Loaded data into Transaction model')
+# Perform analysis
+results = perform_market_basket_analysis(data_source=data_source, csv_path=csv_path)
 
-if __name__ == '__main__':
-    preprocess_breadbasket()
+if "error" in results:
+    st.error(results["error"])
+else:
+    # Display MBA Recommendations
+    st.header("Top 10 Item Associations")
+    mba_df = pd.DataFrame(results['mba_recommendations'])
+    st.table(mba_df.style.set_properties(**{'background-color': 'white', 'border-color': 'gray', 'border-style': 'solid', 'border-width': '1px'}))
+
+    # Display Top 10 Best-Selling Products
+    st.header("Top 10 Best-Selling Products")
+    top_df = pd.DataFrame(results['top_selling'])
+    st.table(top_df.style.set_properties(**{'background-color': 'white', 'border-color': 'gray', 'border-style': 'solid', 'border-width': '1px'}))
+    # Render Plotly chart
+    top_chart = go.Figure(json.loads(results['top_chart']))
+    st.plotly_chart(top_chart, use_container_width=True)
+
+    # Display Least 10 Selling Products
+    st.header("Least 10 Selling Products")
+    least_df = pd.DataFrame(results['least_selling'])
+    st.table(least_df.style.set_properties(**{'background-color': 'white', 'border-color': 'gray', 'border-style': 'solid', 'border-width': '1px'}))
+    # Render Plotly chart
+    least_chart = go.Figure(json.loads(results['least_chart']))
+    st.plotly_chart(least_chart, use_container_width=True)
+
+    st.write("Use these insights to create product sets (e.g., combos) or optimize inventory!")
+
+if __name__ == "__main__":
+    # Streamlit runs this file directly
+    pass

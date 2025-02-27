@@ -1,4 +1,4 @@
-#!/Users/haythi/Desktop/CS50W/Medipoint/.venv/bin/python3.12
+#!/Users/haythi/Desktop/CS50W/Medipoint/.venv/bin/python3.9
 # -*- coding: utf-8 -*-
 import re
 import sys

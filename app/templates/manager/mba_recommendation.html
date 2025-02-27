@@ -7,49 +7,50 @@
     <title>Everyes POS - Recommendations</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"> <!-- For icons -->
 </head>
-<body class="bg-gray-50 dark:bg-gray-900">
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 font-sans antialiased">
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
 
-    <!-- Sidebar (Copied from layout.html) -->
-    <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
-        <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
+    <!-- Sidebar (Copied from layout.html, with subtle enhancements) -->
+    <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-lg" aria-label="Sidebar">
+        <div class="h-full px-3 py-4 overflow-y-auto">
             <a href="{% url 'admin_dashboard' %}" class="flex items-center ps-2.5 mb-5">
-                <img src="https://flowbite.com/docs/images/logo.svg" class="h-6 me-3 sm:h-7" alt="Flowbite Logo" />
-                <span class="self-center text-xl font-semibold whitespace-nowrap dark:text-white">Everyes POS</span>
+                <img src="https://flowbite.com/docs/images/logo.svg" class="h-6 me-3 sm:h-7 transition-transform hover:scale-105" alt="Flowbite Logo" />
+                <span class="self-center text-xl font-semibold whitespace-nowrap text-gray-900 dark:text-white transition-colors hover:text-blue-600 dark:hover:text-blue-400">Everyes POS</span>
             </a>
             <ul class="space-y-2 font-medium">
                 <li>
-                    <a href="{% url 'admin_dashboard' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                        <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
+                    <a href="{% url 'admin_dashboard' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-blue-100 dark:hover:bg-blue-800 group transition-all duration-300 hover:shadow-md">
+                        <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
                             <path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/>
                             <path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/>
                         </svg>
-                        <span class="ms-3">Dashboard</span>
+                        <span class="ms-3 transition-colors hover:text-blue-600 dark:hover:text-blue-300">Dashboard</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'add_employee' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                        <svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                    <a href="{% url 'add_employee' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-blue-100 dark:hover:bg-blue-800 group transition-all duration-300 hover:shadow-md">
+                        <svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
                             <path d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z"/>
                         </svg>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Manage Employees</span>
+                        <span class="flex-1 ms-3 whitespace-nowrap transition-colors hover:text-blue-600 dark:hover:text-blue-300">Manage Employees</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'mba_recommendations' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                        <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <a href="{% url 'mba_recommendations' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-blue-100 dark:hover:bg-blue-800 group transition-all duration-300 hover:shadow-md">
+                        <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                         </svg>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Recommendations</span>
+                        <span class="flex-1 ms-3 whitespace-nowrap transition-colors hover:text-blue-600 dark:hover:text-blue-300">Recommendations</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'logout' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                        <svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16">
+                    <a href="{% url 'logout' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-red-100 dark:hover:bg-red-800 group transition-all duration-300 hover:shadow-md">
+                        <svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 8h11m0 0L8 4m4 4-4 4m4-11h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"/>
                         </svg>
-                        <span class="flex-1 ms-3 whitespace-nowrap">Logout</span>
+                        <span class="flex-1 ms-3 whitespace-nowrap transition-colors hover:text-red-600 dark:hover:text-red-300">Logout</span>
                     </a>
                 </li>
             </ul>
@@ -59,7 +60,7 @@
     <!-- Main Content -->
     <div class="p-4 sm:ml-64">
         <!-- Top Bar -->
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-6 animate-fadeIn">
             <form class="max-w-md basis-128">
                 <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
                 <div class="relative">
@@ -68,11 +69,11 @@
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
                         </svg>
                     </div>
-                    <input type="search" id="default-search" class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search Employees..." required />
-                    <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Search</button>
+                    <input type="search" id="default-search" class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 shadow-md" placeholder="Search Employees..." required />
+                    <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transform hover:scale-105 transition-transform duration-300">Search</button>
                 </div>
             </form>
-            <button type="button" class="flex basis-5 text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" id="user-menu-button" aria-expanded="false" data-dropdown-toggle="user-dropdown" data-dropdown-placement="bottom">
+            <button type="button" class="flex basis-5 text-sm bg-gradient-to-r from-gray-800 to-gray-900 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600 shadow-md hover:shadow-lg transition-all duration-300" id="user-menu-button" aria-expanded="false" data-dropdown-toggle="user-dropdown" data-dropdown-placement="bottom">
                 <span class="sr-only">Open user menu</span>
                 <svg class="w-6 h-6 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                     <path fill-rule="evenodd" d="M12 20a7.966 7.966 0 0 1-5.002-1.756l.002.001v-.683c0-1.794 1.492-3.25 3.333-3.25h3.334c1.84 0 3.333 1.456 3.333 3.25v.683A7.966 7.966 0 0 1 12 20ZM2 12C2 6.477 6.477 2 12 2s10 4.477 10 10c0 5.5-4.44 9.963-9.932 10h-.138C6.438 21.962 2 17.5 2 12Zm10-5c-1.84 0-3.333 1.455-3.333 3.25S10.159 13.5 12 13.5c1.84 0 3.333-1.455 3.333-3.25S13.841 7 12 7Z" clip-rule="evenodd"/>
@@ -80,71 +81,61 @@
             </button>
         </div>
 
-        <!-- Welcome Message (for mba_recommendations, adjust as needed) -->
-        <p class="max-w-lg text-3xl font-semibold leading-normal text-gray-900 dark:text-white">Hi, {{ request.user.username }}. Market Basket Analysis</p>
-        <br>
+        <!-- Welcome Message (for mba_recommendations, with animation) -->
+        <p class="max-w-3xl text-4xl font-extrabold leading-tight text-gradient bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400 animate-slideIn mb-8">Hi, {{ request.user.username }}. Upload Sales Data for Insights</p>
 
-        <!-- MBA Options and Results -->
-        <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mt-6">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Analyze Sales for Recommendations</h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-4">Choose a data source to find item associations for sets or recipes.</p>
+        <!-- MBA Options (Streamlined, Attractive File Upload) -->
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 transform hover:scale-102 transition-all duration-500">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+                <i class="fas fa-upload mr-3 text-blue-500 dark:text-blue-300 animate-spin-slow"></i>
+                Upload Sales Data
+            </h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-6 text-lg leading-relaxed">Upload your CSV file to uncover powerful item associations for sets, recipes, or promotions.</p>
             
-            <!-- Two Options -->
-            <div class="flex space-x-4 mb-4">
-                <!-- Option 1: Upload CSV -->
-                <form method="POST" enctype="multipart/form-data" class="flex items-center space-x-2">
-                    {% csrf_token %}
-                    <input type="file" name="csv_file" accept=".csv" class="p-2 border rounded dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600" required>
-                    <button type="submit" name="analyze_csv" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Analyze CSV</button>
-                </form>
-                <!-- Option 2: Use Database -->
-                <form method="POST">
-                    {% csrf_token %}
-                    <button type="submit" name="analyze_db" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Use Database</button>
-                </form>
-            </div>
+            <!-- File Upload and Analyze CSV Button (Visually Appealing) -->
+            <form method="POST" enctype="multipart/form-data" class="w-full">
+                {% csrf_token %}
+                <div class="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <input type="file" name="csv_file" accept=".csv" class="p-2 border-none rounded dark:bg-gray-600 dark:text-gray-300 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white file:hover:bg-blue-600 file:dark:bg-blue-400 file:dark:hover:bg-blue-500" required>
+                    <button type="submit" name="analyze_csv" class="text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-full text-sm px-6 py-3 transform hover:scale-105 transition-transform duration-300">Analyze CSV</button>
+                </div>
+            </form>
             
-            <!-- Messages -->
+            <!-- Messages (Enhanced Styling) -->
             {% if messages %}
                 {% for message in messages %}
-                    <div class="p-2 mb-2 text-sm text-{{ message.tags }}-700 bg-{{ message.tags }}-100 rounded-lg dark:bg-{{ message.tags }}-900 dark:text-{{ message.tags }}-300" role="alert">
+                    <div class="p-4 mt-4 text-sm rounded-lg shadow-md animate-bounceIn {% if message.tags == 'error' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% endif %}">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
-            
-            <!-- Results -->
-            {% if recommendations %}
-                {% if recommendations.error %}
-                    <p class="text-red-600 dark:text-red-400 mt-4">{{ recommendations.error }}</p>
-                {% else %}
-                    <h4 class="mt-4 text-lg font-semibold dark:text-white">Top Item Associations</h4>
-                    <table class="w-full text-sm text-gray-500 dark:text-gray-400 mt-4">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                            <tr>
-                                <th class="py-3 px-6">If Bought</th>
-                                <th class="py-3 px-6">Then Suggest</th>
-                                <th class="py-3 px-6">Support</th>
-                                <th class="py-3 px-6">Confidence</th>
-                                <th class="py-3 px-6">Lift</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for rec in recommendations %}
-                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                    <td class="py-4 px-6">{{ rec.antecedents }}</td>
-                                    <td class="py-4 px-6">{{ rec.consequents }}</td>
-                                    <td class="py-4 px-6">{{ rec.support|floatformat:3 }}</td>
-                                    <td class="py-4 px-6">{{ rec.confidence|floatformat:3 }}</td>
-                                    <td class="py-4 px-6">{{ rec.lift|floatformat:3 }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <p class="text-gray-600 dark:text-gray-400 mt-4">Use these insights to create product sets (e.g., combos) or new recipes!</p>
-                {% endif %}
-            {% endif %}
         </div>
     </div>
+
+    <!-- Custom CSS for Animations -->
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bounceIn {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        @keyframes spinSlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .animate-fadeIn { animation: fadeIn 1s ease-in; }
+        .animate-slideIn { animation: slideIn 0.8s ease-out; }
+        .animate-bounceIn { animation: bounceIn 1s; }
+        .animate-spin-slow { animation: spinSlow 4s linear infinite; }
+    </style>
 </body>
 </html>

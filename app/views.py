@@ -5,11 +5,13 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from .models import Product,EmployeeProfile
+from .models import Product,EmployeeProfile,Transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.core.files.storage import FileSystemStorage
+import subprocess
+import os
 
 # Login view
 def login_view(request):
@@ -111,7 +113,6 @@ def mba_recommendations(request):
         messages.error(request, 'Only admins can access recommendations.')
         return redirect('admin_dashboard')
     
-    recommendations = None
     if request.method == 'POST':
         from .market_basket import perform_market_basket_analysis
         if 'analyze_csv' in request.POST and request.FILES.get('csv_file'):
@@ -122,8 +123,12 @@ def mba_recommendations(request):
                 fs = FileSystemStorage(location='media/uploads')
                 filename = fs.save(csv_file.name, csv_file)
                 file_path = fs.path(filename)
-                recommendations = perform_market_basket_analysis(data_source='csv', csv_path=file_path)
+                print(f"Saved CSV to: {file_path}")
+                # Launch Streamlit with CSV path, ensuring correct directory
+                subprocess.Popen(["streamlit", "run", os.path.join(os.path.dirname(os.path.abspath(__file__)), "recommendations.py"), "--", file_path], cwd=os.path.dirname(os.path.abspath(__file__)))
+                return redirect("http://localhost:8501")
         elif 'analyze_db' in request.POST:
-            recommendations = perform_market_basket_analysis(data_source='db')
+            subprocess.Popen(["streamlit", "run", os.path.join(os.path.dirname(os.path.abspath(__file__)), "recommendations.py")], cwd=os.path.dirname(os.path.abspath(__file__)))
+            return redirect("http://localhost:8501")
     
-    return render(request, 'manager/mba_recommendation.html', {'recommendations': recommendations})
+    return render(request, 'manager/mba_recommendation.html', {'recommendations': None})

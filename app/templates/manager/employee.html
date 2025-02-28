@@ -1,0 +1,51 @@
+{% extends "manager/layout.html" %}
+
+{% block title %}
+
+  Manage Employee Page
+
+{% endblock %}
+{% block body %}
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="p-4 mb-4 text-sm text-{{ message.tags }}-700 bg-{{ message.tags }}-100 rounded-lg dark:bg-{{ message.tags }}-900 dark:text-{{ message.tags }}-300" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Add Employee Form -->
+        <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Employee</h3>
+            <form method="POST" action="{% url 'add_employee' %}" class="max-w-md">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Username</label>
+                    <input type="text" name="username" id="username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Enter username" required>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+                    <input type="password" name="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Add Employee</button>
+            </form>
+        </div>
+
+        <!-- Employee List -->
+        <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Employee List</h3>
+            <ul class="space-y-4">
+                {% for employee in employees %}
+                    <li class="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg">
+                        <span class="text-gray-900 dark:text-white">{{ employee.user.username }} - {{ employee.role }}</span>
+                        {% if employee.role != 'admin' %}
+                            <a href="{% url 'delete_employee' employee.user.id %}" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-600">Delete</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+{% endblock %}

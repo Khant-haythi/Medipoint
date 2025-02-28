@@ -5,47 +5,186 @@
   Manage Employee Page
 
 {% endblock %}
-{% block content %}
-        <!-- Messages -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="p-4 mb-4 text-sm text-{{ message.tags }}-700 bg-{{ message.tags }}-100 rounded-lg dark:bg-{{ message.tags }}-900 dark:text-{{ message.tags }}-300" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
+{% block body %}
+{% load static %}
+    <!-- Main Section -->
+    <main class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
+        
 
-        <!-- Add Employee Form -->
-        <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Employee</h3>
-            <form method="POST" action="{% url 'add_employee' %}" class="max-w-md">
-                {% csrf_token %}
-                <div class="mb-4">
-                    <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Username</label>
-                    <input type="text" name="username" id="username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Enter username" required>
+        <!-- Welcome Message and KPIs -->
+        <div class="mb-6 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Hi, {{ request.user.username }}, Good Morning</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-2">
+                Your dashboard gives you views of key performance or business processes.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Sales</h3>
+                    <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">31.50</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 60%"></div>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-                    <input type="password" name="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Enter password" required>
+                <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Cost</h3>
+                    <p class="text-2xl font-bold text-pink-600 dark:text-pink-400 mt-2">$4,598</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
+                        <div class="bg-pink-600 h-2.5 rounded-full" style="width: 70%"></div>
+                    </div>
                 </div>
-                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Add Employee</button>
-            </form>
+                <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Product Sold</h3>
+                    <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">4,589 M</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
+                        <div class="bg-green-600 h-2.5 rounded-full" style="width: 80%"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Employee List -->
-        <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Employee List</h3>
-            <ul class="space-y-4">
-                {% for employee in employees %}
-                    <li class="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg">
-                        <span class="text-gray-900 dark:text-white">{{ employee.user.username }} - {{ employee.role }}</span>
-                        {% if employee.role != 'admin' %}
-                            <a href="{% url 'delete_employee' employee.user.id %}" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-600">Delete</a>
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Overview Chart -->
+            <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Overview</h2>
+                    <select class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateChart('overview', this.value)">
+                        <option value="This Month">This Month</option>
+                        <option value="This Year">This Year</option>
+                    </select>
+                </div>
+                <canvas id="overviewChart" class="w-full"></canvas>
+            </div>
+
+            <!-- Revenue Vs Cost Chart -->
+            <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Revenue Vs Cost</h2>
+                    <select class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateChart('revenueVsCost', this.value)">
+                        <option value="This Month">This Month</option>
+                        <option value="This Year">This Year</option>
+                    </select>
+                </div>
+                <canvas id="revenueVsCostChart" class="w-full"></canvas>
+            </div>
         </div>
-    </div>
+
+        <!-- Flowbite JS CDN -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+
+        <!-- Link to script.js -->
+        <script src="{% static 'src/cashier_static/script.js' %}" defer></script>
+
+        <!-- Chart.js Initialization -->
+        <script>
+            // Initialize Overview Chart (Candlestick/Line Chart)
+            const overviewCtx = document.getElementById('overviewChart').getContext('2d');
+            const overviewChart = new Chart(overviewCtx, {
+                type: 'candlestick', // Use candlestick for price movements (like in the image)
+                data: {
+                    datasets: [{
+                        label: 'Price Movement',
+                        data: [
+                            { x: '05:00', o: 60, h: 65, l: 55, c: 62 },
+                            { x: '08:00', o: 62, h: 68, l: 58, c: 65 },
+                            { x: '11:00', o: 65, h: 70, l: 60, c: 68 },
+                            { x: '14:00', o: 68, h: 72, l: 63, c: 65 },
+                            { x: '17:00', o: 65, h: 67, l: 60, c: 62 },
+                            { x: '20:00', o: 62, h: 64, l: 58, c: 60 },
+                            { x: '23:00', o: 60, h: 63, l: 57, c: 59 },
+                            { x: '02:00', o: 59, h: 61, l: 55, c: 58 },
+                            { x: '05:00', o: 58, h: 60, l: 54, c: 56 },
+                        ],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'category', title: { display: true, text: 'Time' } },
+                        y: { title: { display: true, text: 'Price' } }
+                    }
+                }
+            });
+
+            // Initialize Revenue Vs Cost Chart (Bar + Line Chart)
+            const revenueVsCostCtx = document.getElementById('revenueVsCostChart').getContext('2d');
+            const revenueVsCostChart = new Chart(revenueVsCostCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Mar', 'May', 'Jul'],
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: [3000, 2500, 2000, 1000],
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            type: 'bar'
+                        },
+                        {
+                            label: 'Cost',
+                            data: [2000, 1800, 1500, 800],
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderWidth: 1,
+                            type: 'line',
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Amount' },
+                            ticks: { callback: value => `$${value}` }
+                        },
+                        x: { title: { display: true, text: 'Month' } }
+                    },
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+
+            // Function to update charts based on time period
+            function updateChart(chartType, period) {
+                const chart = chartType === 'overview' ? overviewChart : revenueVsCostChart;
+                if (period === 'This Year') {
+                    // Example: Update with yearly data (simplified for demo)
+                    if (chartType === 'overview') {
+                        chart.data.datasets[0].data = [
+                            { x: 'Jan', o: 50, h: 60, l: 40, c: 55 },
+                            { x: 'Feb', o: 55, h: 65, l: 45, c: 60 },
+                            { x: 'Mar', o: 60, h: 70, l: 50, c: 65 },
+                            { x: 'Apr', o: 65, h: 75, l: 55, c: 70 },
+                            { x: 'May', o: 70, h: 80, l: 60, c: 75 },
+                            { x: 'Jun', o: 75, h: 85, l: 65, c: 80 },
+                            { x: 'Jul', o: 80, h: 90, l: 70, c: 85 },
+                            { x: 'Aug', o: 85, h: 95, l: 75, c: 90 },
+                            { x: 'Sep', o: 90, h: 100, l: 80, c: 95 },
+                            { x: 'Oct', o: 95, h: 105, l: 85, c: 100 },
+                            { x: 'Nov', o: 100, h: 110, l: 90, c: 105 },
+                            { x: 'Dec', o: 105, h: 115, l: 95, c: 110 },
+                        ];
+                    } else {
+                        chart.data.labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        chart.data.datasets[0].data = [4000, 3800, 3600, 3400, 3200, 3000, 2800, 2600, 2400, 2200, 2000, 1800];
+                        chart.data.datasets[1].data = [3000, 2800, 2600, 2400, 2200, 2000, 1800, 1600, 1400, 1200, 1000, 800];
+                    }
+                } else {
+                    // Default to monthly data (already set in initialization)
+                }
+                chart.update();
+            }
+        </script>
+    </main>
+
 
 {% endblock %}

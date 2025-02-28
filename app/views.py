@@ -12,6 +12,8 @@ from django.contrib.auth import logout
 from django.core.files.storage import FileSystemStorage
 import subprocess
 import os
+from .market_basket import perform_market_basket_analysis
+from django.conf import settings
 
 # Login view
 def login_view(request):
@@ -37,7 +39,7 @@ def admin_dashboard(request):
     if profile.role != 'admin':
         return redirect('cashier_dashboard')
     
-    return render(request, 'manager/layout.html')
+    return render(request, 'manager/index.html')
 
 # Cashier dashboard
 @login_required
@@ -69,7 +71,7 @@ def add_employee(request):
             EmployeeProfile.objects.create(user=user, role='cashier')
             messages.success(request, 'Employee added successfully.')
         return redirect('admin_dashboard')
-    return render(request, 'manager/index.html', {'employees': employees})  
+    return render(request, 'manager/employee.html', {'employees': employees})  
 
 @login_required
 def delete_employee(request, user_id):
@@ -113,22 +115,42 @@ def mba_recommendations(request):
         messages.error(request, 'Only admins can access recommendations.')
         return redirect('admin_dashboard')
     
-    if request.method == 'POST':
-        from .market_basket import perform_market_basket_analysis
-        if 'analyze_csv' in request.POST and request.FILES.get('csv_file'):
+    # Check for AJAX request by looking at the X-Requested-With header
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    # Handle AJAX requests for analysis
+    if request.method == 'POST' and is_ajax:
+        if 'csv_file' in request.FILES and 'analyze_csv' in request.POST:
             csv_file = request.FILES['csv_file']
             if not csv_file.name.endswith('.csv'):
-                messages.error(request, 'Please upload a valid CSV file.')
-            else:
-                fs = FileSystemStorage(location='media/uploads')
-                filename = fs.save(csv_file.name, csv_file)
-                file_path = fs.path(filename)
-                print(f"Saved CSV to: {file_path}")
-                # Launch Streamlit with CSV path, ensuring correct directory
-                subprocess.Popen(["streamlit", "run", os.path.join(os.path.dirname(os.path.abspath(__file__)), "recommendations.py"), "--", file_path], cwd=os.path.dirname(os.path.abspath(__file__)))
-                return redirect("http://localhost:8501")
+                return JsonResponse({'error': 'Please upload a valid CSV file.'}, status=400)
+            
+            # Save the CSV file temporarily
+            fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'uploads'))
+            filename = fs.save(csv_file.name, csv_file)
+            file_path = fs.path(filename)
+            print(f"Saved CSV to: {file_path}")
+            
+            # Perform MBA on CSV data
+            result = perform_market_basket_analysis(data_source='csv', csv_path=file_path)
+            # Clean up the file after processing
+            fs.delete(filename)
+            
+            if 'error' in result:
+                return JsonResponse({'error': result['error']}, status=400)
+            return JsonResponse(result)
+        
         elif 'analyze_db' in request.POST:
-            subprocess.Popen(["streamlit", "run", os.path.join(os.path.dirname(os.path.abspath(__file__)), "recommendations.py")], cwd=os.path.dirname(os.path.abspath(__file__)))
-            return redirect("http://localhost:8501")
+            # Perform MBA on database data
+            result = perform_market_basket_analysis(data_source='db')
+            if 'error' in result:
+                return JsonResponse({'error': result['error']}, status=400)
+            return JsonResponse(result)
+        
+        return JsonResponse({'error': 'Invalid request'}, status=400)
     
-    return render(request, 'manager/mba_recommendation.html', {'recommendations': None})
+    # Render the initial template for non-AJAX requests
+    return render(request, 'manager/mba_recommendation.html', {
+        'recommendations': None,
+        'error': None
+    })

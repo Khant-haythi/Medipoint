@@ -495,3 +495,131 @@ function populateResults(results) {
     console.log("Least selling chart not created: missing data or canvas");
   }
 }
+
+
+function getCSRFToken() {
+  // Get the CSRF token from the cookie
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      // Look for the cookie named 'csrftoken'
+      if (cookie.substring(0, 9) === 'csrftoken=') {
+        cookieValue = decodeURIComponent(cookie.substring(9));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+// Function to show a notification (you can replace alert with a custom UI element)
+function showNotification(message, type = "success") {
+  const messageTypes = {
+    success: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+    error: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+  };
+  alert(`${type === "success" ? "Success: " : "Error: "} ${message}`);
+  // Optionally, replace alert with a DOM notification:
+  /*
+  const messagesDiv = document.getElementById("messages") || document.createElement("div");
+  messagesDiv.innerHTML += `
+    <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn ${messageTypes[type]}">
+      ${message}
+    </div>
+  `;
+  if (!document.getElementById("messages")) {
+    document.body.appendChild(messagesDiv);
+  }
+  */
+}
+
+document.querySelector(".print-bills-btn").addEventListener("click", () => {
+  const orderItems = document.querySelectorAll(".order-item");
+  if (orderItems.length === 0) {
+    showNotification("No items in the order to print!", "error");
+    return;
+  }
+
+  const transactions = [];
+
+  // Use a Map or object to aggregate quantities for unique items
+  const itemQuantities = {};
+  orderItems.forEach(item => {
+    const name = item.querySelector("h3").textContent.trim(); // Ensure no whitespace issues
+    const quantityElement = item.querySelector(".quantity");
+    const quantity = quantityElement ? parseInt(quantityElement.textContent) || 1 : 1;
+    const price = parseFloat(item.getAttribute("data-price")) || 0;
+
+    if (!name) {
+      console.error("Invalid item name for element:", item);
+      showNotification(`Invalid item name, skipping item`, "error");
+      return;
+    }
+
+    if (isNaN(quantity) || quantity < 1) {
+      console.error("Invalid quantity for item:", name);
+      showNotification(`Invalid quantity for item ${name}, using 1`, "error");
+      quantity = 1;
+    }
+
+    if (isNaN(price) || price < 0) {
+      console.error("Invalid price for item:", name);
+      showNotification(`Invalid price for item ${name}, using $0.00`, "error");
+      price = 0;
+    }
+
+    // Aggregate quantities for duplicate items
+    if (itemQuantities[name]) {
+      itemQuantities[name].quantity += quantity;
+    } else {
+      itemQuantities[name] = { quantity: quantity, price: price };
+    }
+  });
+
+  // Create transactions with aggregated quantities
+  for (const [item, details] of Object.entries(itemQuantities)) {
+    transactions.push({
+      item: item, // Ensure this matches the backend's expected key
+      quantity: details.quantity,
+      price: details.price
+    });
+  }
+
+  console.log("Saving transactions:", transactions);
+
+  // Send AJAX request to save transactions
+  fetch("/save-transaction/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCSRFToken()
+    },
+    body: JSON.stringify({ transactions: transactions })
+  })
+  .then(response => {
+    console.log("Response status:", response.status);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log("Response data:", data);
+    if (data.success) {
+      showNotification("Bill printed and transactions saved successfully!", "success");
+      console.log("Transactions saved successfully");
+      // Optionally clear the order
+      document.getElementById("orderItemsContainer").innerHTML = "";
+      updateTotals();
+    } else {
+      showNotification(`Failed to save transactions: ${data.message || "Unknown error"}`, "error");
+      console.error("Failed to save transactions:", data.message);
+    }
+  })
+  .catch(error => {
+    console.error("Error saving transactions:", error);
+    showNotification(`Error saving transactions: ${error.message}`, "error");
+  });
+});
+

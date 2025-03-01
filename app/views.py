@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -10,11 +10,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.core.files.storage import FileSystemStorage
-import subprocess
-import os
+import os,json,datetime,io,uuid
+from django.db import IntegrityError
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 from .market_basket import perform_market_basket_analysis
 from django.conf import settings
 from app import market_basket
+from django.views.decorators.csrf import csrf_exempt
 
 # Login view
 def login_view(request):
@@ -147,3 +152,147 @@ def mba_recommendations(request):
                 os.remove(temp_csv_path)
 
     return render(request, "manager/mba_recommendation.html")
+
+def generateInvoiceNumber():
+    # Use only date (YYYYMMDD) and a 3-digit sequential number for the day
+    today = datetime.datetime.now().strftime('%Y%m%d')
+    # Get the count of transactions for today to use as a sequence
+    transaction_count_today = Transaction.objects.filter(
+        invoice_no__startswith=f"INV-{today}"
+    ).count()
+    sequence = f"{transaction_count_today + 1:03d}"  # 3-digit sequence (001, 002, etc.)
+    return f"INV-{today}-{sequence}"
+
+def generate_invoice_pdf(invoice_no, order_details, subtotal, tax, total):
+    print(f"Generating invoice for {invoice_no} with details: {order_details}")  # Debug
+    buffer = io.BytesIO()
+    try:
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+
+        styles = getSampleStyleSheet()
+        elements.append(Paragraph("Everyes POS Invoice", styles['Title']))
+        elements.append(Paragraph(f"Invoice # {invoice_no}", styles['Normal']))
+        elements.append(Paragraph(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+
+        data = [["Item", "Quantity", "Price", "Subtotal"]]
+        for item in order_details:
+            data.append([item['name'], str(item['quantity']), f"${item['price']:.2f}", f"${item['subtotal']:.2f}"])
+        
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        elements.append(table)
+
+        elements.append(Paragraph(f"Subtotal: ${subtotal:.2f}", styles['Normal']))
+        elements.append(Paragraph(f"Tax (10%): ${tax:.2f}", styles['Normal']))
+        elements.append(Paragraph(f"Total: ${total:.2f}", styles['Heading2']))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+    except Exception as e:
+        print(f"Error generating PDF: {str(e)}")  # Debug PDF errors
+        raise
+
+@csrf_exempt  # Remove or handle CSRF properly in production
+def save_transaction(request):
+    if request.method == "POST":
+        try:
+            print("Received POST data:", request.body.decode('utf-8'))  # Debug incoming data
+            data = json.loads(request.body)
+            transactions = data.get("transactions", [])
+            if not transactions:
+                raise ValueError("No transactions provided")
+
+            # Generate a unique invoice number
+            invoice_no = generateInvoiceNumber()
+            while Transaction.objects.filter(invoice_no=invoice_no).exists():
+                invoice_no = f"{invoice_no}-{uuid.uuid4().hex[:8]}"
+            
+            order_details = []
+            subtotal = 0
+
+            # Process each transaction (item in the order)
+            for transaction in transactions:
+                item = transaction.get("item", "").strip()
+                quantity = transaction.get("quantity", 1)
+                price = transaction.get("price", 0.0)
+
+                # Validate data
+                if not item or not isinstance(item, str):
+                    raise ValueError(f"Invalid item name: {item}")
+                if not isinstance(quantity, (int, float)) or quantity < 1:
+                    raise ValueError(f"Invalid quantity for item {item}: {quantity}")
+                if not isinstance(price, (int, float)) or price < 0:
+                    raise ValueError(f"Invalid price for item {item}: {price}")
+
+                # Convert price to float and quantity to int for consistency
+                quantity = int(quantity)
+                price = float(price)
+                item_subtotal = price * quantity
+                subtotal += item_subtotal
+
+                # Save to Transaction model with the same invoice_no
+                Transaction.objects.create(
+                    invoice_no=invoice_no,
+                    item=item,
+                    quantity=quantity,
+                    price=price
+                )
+
+                # Add to order details for the invoice
+                order_details.append({
+                    "name": item,
+                    "quantity": quantity,
+                    "price": price,
+                    "subtotal": item_subtotal
+                })
+
+            tax = subtotal * 0.1  # 10% tax
+            total = subtotal + tax
+
+            # Generate PDF invoice
+            print(f"Generating invoice for {invoice_no} with details: {order_details}")
+            pdf_buffer = generate_invoice_pdf(invoice_no, order_details, subtotal, tax, total)
+            
+            # Save PDF to media directory
+            media_path = os.path.join(settings.MEDIA_ROOT, "invoices", f"invoice_{invoice_no}.pdf")
+            os.makedirs(os.path.dirname(media_path), exist_ok=True)
+            with open(media_path, "wb") as f:
+                f.write(pdf_buffer.getvalue())
+            pdf_url = f"/media/invoices/invoice_{invoice_no}.pdf"
+
+            return JsonResponse({
+                "success": True,
+                "message": "Transactions and invoice saved successfully",
+                "invoice_url": pdf_url
+            })
+        except IntegrityError as e:
+            print(f"Database error: {str(e)}")
+            return JsonResponse({"success": False, "message": f"Database error: {str(e)}"}, status=500)
+        except ValueError as e:
+            print(f"Validation error: {str(e)}")
+            return JsonResponse({"success": False, "message": str(e)}, status=400)
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            return JsonResponse({"success": False, "message": f"Unexpected error: {str(e)}"}, status=500)
+    
+    return JsonResponse({"success": False, "message": "Invalid request method"}, status=400)
+
+def transaction_history(request):
+    transactions = Transaction.objects.all().order_by('-timestamp')
+    return render(request, 'manager/transaction_history.html', {'transactions': transactions})
+

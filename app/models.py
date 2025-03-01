@@ -46,10 +46,15 @@ class Product(models.Model):
     }
     
 class Transaction(models.Model):
-    invoice_no = models.CharField(max_length=50, unique=True)  # Unique invoice ID
-    item = models.CharField(max_length=100)  # Single item per row
+    invoice_no = models.CharField(max_length=50)  # Remove unique=True since multiple items can share the same invoice_no
+    item = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Add a unique constraint to ensure no duplicate items in the same invoice
+        unique_together = ('invoice_no', 'item')  # Prevents duplicate items in the same invoice
 
     def __str__(self):
         return f"{self.invoice_no} - {self.item}"

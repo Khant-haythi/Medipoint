@@ -108,49 +108,29 @@ def showproduct(request):
     # print(data)  # For debugging
     return JsonResponse(data)
 
-@login_required
 def mba_recommendations(request):
-    profile = EmployeeProfile.objects.get(user=request.user)
-    if profile.role != 'admin':
-        messages.error(request, 'Only admins can access recommendations.')
-        return redirect('admin_dashboard')
-    
-    # Check for AJAX request by looking at the X-Requested-With header
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
-    # Handle AJAX requests for analysis
-    if request.method == 'POST' and is_ajax:
-        if 'csv_file' in request.FILES and 'analyze_csv' in request.POST:
-            csv_file = request.FILES['csv_file']
-            if not csv_file.name.endswith('.csv'):
-                return JsonResponse({'error': 'Please upload a valid CSV file.'}, status=400)
-            
-            # Save the CSV file temporarily
-            fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'uploads'))
-            filename = fs.save(csv_file.name, csv_file)
-            file_path = fs.path(filename)
-            print(f"Saved CSV to: {file_path}")
-            
-            # Perform MBA on CSV data
-            result = perform_market_basket_analysis(data_source='csv', csv_path=file_path)
-            # Clean up the file after processing
-            fs.delete(filename)
-            
-            if 'error' in result:
-                return JsonResponse({'error': result['error']}, status=400)
-            return JsonResponse(result)
-        
-        elif 'analyze_db' in request.POST:
-            # Perform MBA on database data
-            result = perform_market_basket_analysis(data_source='db')
-            if 'error' in result:
-                return JsonResponse({'error': result['error']}, status=400)
-            return JsonResponse(result)
-        
-        return JsonResponse({'error': 'Invalid request'}, status=400)
-    
-    # Render the initial template for non-AJAX requests
-    return render(request, 'manager/mba_recommendation.html', {
-        'recommendations': None,
-        'error': None
-    })
+    if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        csv_file = request.FILES.get("csv_file")
+        if not csv_file:
+            return JsonResponse({"success": False, "message": "No file uploaded"}, status=400)
+        try:
+            df = pd.read_csv(csv_file)
+            basket = pd.get_dummies(df.stack()).groupby(level=0).sum()
+            frequent_itemsets = apriori(basket, min_support=0.01, use_colnames=True)
+            rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+            recommendations = [
+                {"antecedents": list(rule["antecedents"]), "consequents": list(rule["consequents"]),
+                 "support": rule["support"], "confidence": rule["confidence"], "lift": rule["lift"]}
+                for rule in rules.to_dict("records")
+            ]
+            sales_summary = df["product"].value_counts()
+            top_selling = [{"name": name, "sales": count} for name, count in sales_summary.head(10).items()]
+            least_selling = [{"name": name, "sales": count} for name, count in sales_summary.tail(10).items()]
+            return JsonResponse({
+                "success": True,
+                "message": "Analysis completed",
+                "results": {"recommendations": recommendations, "top_selling": top_selling, "least_selling": least_selling}
+            })
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+    return render(request, "manager/mba_recommendation.html")

@@ -10,7 +10,6 @@
     <!-- Main Section -->
     <main class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
         
-
         <!-- Welcome Message and KPIs -->
         <div class="mb-6 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Hi, {{ request.user.username }}, Good Morning</h1>
@@ -68,12 +67,6 @@
                 <canvas id="revenueVsCostChart" class="w-full"></canvas>
             </div>
         </div>
-
-        <!-- Flowbite JS CDN -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
-
-        <!-- Link to script.js -->
-        <script src="{% static 'src/cashier_static/script.js' %}" defer></script>
 
         <!-- Chart.js Initialization -->
         <script>

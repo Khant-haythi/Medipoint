@@ -1,3 +1,4 @@
+console.log("Script.js loaded successfully at ", new Date().toISOString());
 // Consolidated DOMContentLoaded event listener for initialization
 document.addEventListener("DOMContentLoaded", () => {
   // Load theme from localStorage or default to light
@@ -24,8 +25,117 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize totals on page load
   updateTotals();
+  // AJAX for CSV Form Submission
+  const csvForm = document.getElementById("csvForm");
+  if (csvForm) {
+    csvForm.addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent default form submission
+
+      const formData = new FormData(this); // Capture form data (including file and CSRF token)
+      const resultsDiv = document.getElementById("results");
+      const messagesDiv = document.getElementById("messages");
+
+      // Clear previous messages and results
+      if (messagesDiv) messagesDiv.innerHTML = "";
+      if (resultsDiv) resultsDiv.classList.add("hidden");
+
+      fetch(window.MBA_URL || "/mba_recommendations/", { // Use window.MBA_URL or fallback
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-Requested-With": "XMLHttpRequest" // Indicate AJAX request
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json(); // Expect JSON response from server
+      })
+      .then(data => {
+        if (data.success) {
+          // Show success message
+          if (messagesDiv) {
+            messagesDiv.innerHTML = `
+              <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                ${data.message || "CSV analyzed successfully!"}
+              </div>
+            `;
+          }
+
+          // Populate results
+          populateResults(data.results);
+          if (resultsDiv) resultsDiv.classList.remove("hidden");
+        } else {
+          // Show error message
+          if (messagesDiv) {
+            messagesDiv.innerHTML = `
+              <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                ${data.message || "Error analyzing CSV"}
+              </div>
+            `;
+          }
+        }
+      })
+      .catch(error => {
+        // Handle network or parsing errors
+        if (messagesDiv) {
+          messagesDiv.innerHTML = `
+            <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+              Failed to analyze CSV: ${error.message}
+            </div>
+          `;
+        }
+        console.error("Error:", error);
+      });
+    });
+  }
 });
 
+// Add this outside DOMContentLoaded, with your other functions
+function populateResults(results) {
+  const recommendationsTable = document.getElementById("recommendationsTable");
+  const topSellingList = document.getElementById("topSelling");
+  const leastSellingList = document.getElementById("leastSelling");
+
+  // Clear previous results
+  if (recommendationsTable) recommendationsTable.innerHTML = "";
+  if (topSellingList) topSellingList.innerHTML = "";
+  if (leastSellingList) leastSellingList.innerHTML = "";
+
+  // Populate Recommendations
+  if (results.recommendations && results.recommendations.length > 0) {
+    results.recommendations.forEach(item => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.antecedents.join(", ")}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.consequents.join(", ")}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.support.toFixed(4)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.confidence.toFixed(4)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.lift.toFixed(4)}</td>
+      `;
+      recommendationsTable.appendChild(row);
+    });
+  }
+
+  // Populate Top Selling Products
+  if (results.top_selling && results.top_selling.length > 0) {
+    results.top_selling.forEach(product => {
+      const li = document.createElement("li");
+      li.textContent = `${product.name} - ${product.sales}`;
+      topSellingList.appendChild(li);
+    });
+  }
+
+  // Populate Least Selling Products
+  if (results.least_selling && results.least_selling.length > 0) {
+    results.least_selling.forEach(product => {
+      const li = document.createElement("li");
+      li.textContent = `${product.name} - ${product.sales}`;
+      leastSellingList.appendChild(li);
+    });
+  }
+}
 // Function to fetch menu data from the API
 async function fetchMenuData() {
   try {
@@ -271,3 +381,4 @@ document.getElementById("sidebarToggle").addEventListener("click", () => {
     `;
   }
 });
+

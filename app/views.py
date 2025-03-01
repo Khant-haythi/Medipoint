@@ -14,6 +14,7 @@ import subprocess
 import os
 from .market_basket import perform_market_basket_analysis
 from django.conf import settings
+from app import market_basket
 
 # Login view
 def login_view(request):
@@ -113,24 +114,36 @@ def mba_recommendations(request):
         csv_file = request.FILES.get("csv_file")
         if not csv_file:
             return JsonResponse({"success": False, "message": "No file uploaded"}, status=400)
+
+        # Save the uploaded file temporarily
+        temp_csv_path = os.path.join("temp", "uploaded_csv.csv")
+        os.makedirs("temp", exist_ok=True)  # Create temp directory if it doesn't exist
+        with open(temp_csv_path, "wb") as f:
+            for chunk in csv_file.chunks():
+                f.write(chunk)
+
         try:
-            df = pd.read_csv(csv_file)
-            basket = pd.get_dummies(df.stack()).groupby(level=0).sum()
-            frequent_itemsets = apriori(basket, min_support=0.01, use_colnames=True)
-            rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
-            recommendations = [
-                {"antecedents": list(rule["antecedents"]), "consequents": list(rule["consequents"]),
-                 "support": rule["support"], "confidence": rule["confidence"], "lift": rule["lift"]}
-                for rule in rules.to_dict("records")
-            ]
-            sales_summary = df["product"].value_counts()
-            top_selling = [{"name": name, "sales": count} for name, count in sales_summary.head(10).items()]
-            least_selling = [{"name": name, "sales": count} for name, count in sales_summary.tail(10).items()]
+            # Call perform_market_basket_analysis with CSV path
+            results = market_basket.perform_market_basket_analysis(data_source="csv", csv_path=temp_csv_path)
+
+            if "error" in results:
+                return JsonResponse({"success": False, "message": results["error"]}, status=500)
+
+            # Format results for JSON response compatible with your JS
             return JsonResponse({
                 "success": True,
                 "message": "Analysis completed",
-                "results": {"recommendations": recommendations, "top_selling": top_selling, "least_selling": least_selling}
+                "results": {
+                    "recommendations": results["mba_recommendations"],
+                    "top_selling": results["top_selling"],
+                    "least_selling": results["least_selling"]
+                }
             })
         except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=500)
+            return JsonResponse({"success": False, "message": f"Error processing CSV: {str(e)}"}, status=500)
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_csv_path):
+                os.remove(temp_csv_path)
+
     return render(request, "manager/mba_recommendation.html")

@@ -3,7 +3,7 @@
 
 {% block title %}
 
-  Manage Employee Page
+  MBA Recommendation Page
 
 {% endblock %}
 {% block body %}
@@ -61,14 +61,10 @@
                 </table>
 
                 <h3 class="text-md font-semibold mt-4 dark:text-gray-200">Top 10 Best-Selling Products</h3>
-                <ul id="topSelling" class="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                    <!-- Top-selling products will be inserted here via JavaScript -->
-                </ul>
+                <canvas id="topSellingChart" class="mt-2"></canvas>
 
                 <h3 class="text-md font-semibold mt-4 dark:text-gray-200">Least 10 Selling Products</h3>
-                <ul id="leastSelling" class="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                    <!-- Least-selling products will be inserted here via JavaScript -->
-                </ul>
+                <canvas id="leastSellingChart" class="mt-2"></canvas>
             </div>
         </div>
     </div>
@@ -83,6 +79,14 @@
         .animate-slideIn { animation: slideIn 0.8s ease-out; }
         .animate-bounceIn { animation: bounceIn 1s; }
         .animate-spin-slow { animation: spinSlow 4s linear infinite; }
+        canvas { max-width: 100%; height: auto; }
+        .dark #results canvas {
+        background-color: #1f2937; /* Tailwind gray-800 */
+        }
+        .dark #results .chart-title,
+        .dark #results .chart-axis {
+        color: #e5e7eb; /* Tailwind gray-200 */
+        }
     </style>
     
 {% endblock %}

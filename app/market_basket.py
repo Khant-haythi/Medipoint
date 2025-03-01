@@ -49,7 +49,10 @@ def perform_market_basket_analysis(data_source='db', csv_path=None):
     basket = (df.groupby(['invoice_no', 'item'])['item']
               .count().unstack().reset_index().fillna(0)
               .set_index('invoice_no'))
-    basket = basket.applymap(lambda x: 1 if x > 0 else 0)
+    # Replace applymap with map
+    basket = basket.map(lambda x: 1 if x > 0 else 0)  # Line 52
+    # Ensure boolean type for mlxtend
+    basket = basket.astype(bool)
     
     # Run Apriori algorithm
     frequent_itemsets = apriori(basket, min_support=0.01, use_colnames=True)

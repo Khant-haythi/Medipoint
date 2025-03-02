@@ -74,42 +74,55 @@
 
       <!-- Main Section -->
       <main class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
+
         <div class="mb-4">
-          <input
-            type="text"
-            id="searchMenu"
-            placeholder="Search menu..."
-            class="w-full p-2 border rounded dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-          />
-        </div>
-
-        <!-- Sections (Hidden/Shown dynamically) -->
-        <section id="menu" class="section-content">
-          <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Hamburger</h1>
-          <p class="text-gray-600 mb-6 dark:text-gray-400">
-            Discover whatever you need easily
-          </p>
-          <div class="max-h-[calc(100vh-200px)] overflow-y-auto" id="menuItemsContainer">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="menuItems">
-              <!-- Menu items will be dynamically inserted here via JavaScript -->
-            </div>
+            <input
+              type="text"
+              id="searchMenu"
+              placeholder="Search menu..."
+              class="w-full p-2 border rounded dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+            />
           </div>
-        </section>
-
-        <section id="history" class="section-content hidden">
-          <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">History</h1>
-          <div id="history-content" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+  
+          <!-- Sections (Hidden/Shown dynamically) -->
+          <section id="menu" class="section-content">
+            <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Hamburger</h1>
             <p class="text-gray-600 mb-6 dark:text-gray-400">
-              Loading transactions...
+              Discover whatever you need easily
             </p>
-          </div>
-        </section>
-
-        <section id="promotion" class="section-content hidden">
-          <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Promotion</h1>
-          <p class="text-gray-600 mb-6 dark:text-gray-400">
-            Check out current promotions and discounts.
-          </p>
+            <div class="max-h-[calc(100vh-200px)] overflow-y-auto" id="menuItemsContainer">
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="menuItems">
+                <!-- Menu items will be dynamically inserted here via JavaScript -->
+              </div>
+            </div>
+          </section>
+  
+        <section id="history" class="section-content">
+            <div class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
+                <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Transaction History</h1>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-blue-600 dark:bg-blue-800 text-white">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Invoice No</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Item</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Quantity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {% for transaction in transactions %}
+                            <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 {% cycle 'bg-white dark:bg-gray-800' 'bg-gray-50 dark:bg-gray-900' %}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.invoice_no }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.item }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.quantity }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.timestamp }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </section>
       </main>
 

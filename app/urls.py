@@ -18,6 +18,8 @@ urlpatterns = [
     path('recommendations/', views.mba_recommendations, name='mba_recommendations'), 
     path('save-transaction/', views.save_transaction, name='save_transaction'),
     path('transaction-history/', views.transaction_history, name='transaction_history'),
+    path('transaction-history-cashier/', views.transaction_history_cashier, name='transaction_history_cashier'),
+
 ]
 
 if settings.DEBUG:

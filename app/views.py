@@ -321,3 +321,6 @@ def transaction_history(request):
     transactions = Transaction.objects.all().order_by('-timestamp')
     return render(request, 'manager/transaction_history.html', {'transactions': transactions})
 
+def transaction_history_cashier(request):
+    transactions = Transaction.objects.all().order_by('-timestamp')
+    return render(request, 'cashier/cashier_transaction.html', {'transactions': transactions})

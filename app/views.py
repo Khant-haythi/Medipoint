@@ -16,6 +16,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.colors import HexColor
 from .market_basket import perform_market_basket_analysis
 from django.conf import settings
 from app import market_basket
@@ -163,39 +164,58 @@ def generateInvoiceNumber():
     sequence = f"{transaction_count_today + 1:03d}"  # 3-digit sequence (001, 002, etc.)
     return f"INV-{today}-{sequence}"
 
-def generate_invoice_pdf(invoice_no, order_details, subtotal, tax, total):
-    print(f"Generating invoice for {invoice_no} with details: {order_details}")  # Debug
+def generate_invoice_pdf(invoice_no, order_details, subtotal, tax, total, cashier_id):
+    print(f"Generating invoice for {invoice_no} with details: {order_details}, cashier: {cashier_id}")  # Debug
     buffer = io.BytesIO()
     try:
         doc = SimpleDocTemplate(buffer, pagesize=letter)
         elements = []
 
         styles = getSampleStyleSheet()
-        elements.append(Paragraph("Everyes POS Invoice", styles['Title']))
-        elements.append(Paragraph(f"Invoice # {invoice_no}", styles['Normal']))
-        elements.append(Paragraph(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
 
-        data = [["Item", "Quantity", "Price", "Subtotal"]]
+        # Bakery-specific title and branding
+        elements.append(Paragraph("EverYes POS - Invoice", styles['Title']))
+        elements.append(Paragraph(f"Invoice No: {invoice_no}", styles['Normal']))
+        elements.append(Paragraph(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        elements.append(Paragraph(f"Cashier: {cashier_id}", styles['Normal']))
+
+        # Table data matching the image style
+        data = [
+            ["Item Details", "Qty", "Unit Price", "Total"]  # Header row
+        ]
         for item in order_details:
-            data.append([item['name'], str(item['quantity']), f"${item['price']:.2f}", f"${item['subtotal']:.2f}"])
+            print(f"Processing item: {item}")  # Debug each item
+            data.append([
+                item['name'],  # Item name (e.g., Cookies, Muffins)
+                str(item['quantity']),  # Quantity
+                f"${item['price']:.2f}",  # Unit price
+                f"${item['subtotal']:.2f}"  # Total for this item
+            ])
         
         table = Table(data)
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            # Header style (dark blue background, white text, centered)
+            ('BACKGROUND', (0, 0), (-1, 0), HexColor('#2C3E50')),  # Use HexColor for hexadecimal color
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 14),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+
+            # Data rows (light background, black text, left-aligned for items, centered for numbers)
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),  # Light background for data rows
             ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),  # Left-align item details
+            ('ALIGN', (1, 0), (-1, -1), 'CENTER'),  # Center-align Qty, Unit Price, Total
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 12),
+
+            # Grid lines (black borders)
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ]))
         elements.append(table)
 
+        # Totals section
         elements.append(Paragraph(f"Subtotal: ${subtotal:.2f}", styles['Normal']))
         elements.append(Paragraph(f"Tax (10%): ${tax:.2f}", styles['Normal']))
         elements.append(Paragraph(f"Total: ${total:.2f}", styles['Heading2']))
@@ -207,11 +227,13 @@ def generate_invoice_pdf(invoice_no, order_details, subtotal, tax, total):
         print(f"Error generating PDF: {str(e)}")  # Debug PDF errors
         raise
 
-@csrf_exempt  # Remove or handle CSRF properly in production
+
+@login_required
+@csrf_exempt
 def save_transaction(request):
     if request.method == "POST":
         try:
-            print("Received POST data:", request.body.decode('utf-8'))  # Debug incoming data
+            print("Received POST data:", request.body.decode('utf-8'))
             data = json.loads(request.body)
             transactions = data.get("transactions", [])
             if not transactions:
@@ -222,16 +244,24 @@ def save_transaction(request):
             while Transaction.objects.filter(invoice_no=invoice_no).exists():
                 invoice_no = f"{invoice_no}-{uuid.uuid4().hex[:8]}"
             
+            # Get the current cashier (authenticated user)
+            if not request.user.is_authenticated:
+                return JsonResponse({"success": False, "message": "User not authenticated"}, status=401)
+            cashier = request.user
+            try:
+                cashier_profile = EmployeeProfile.objects.get(user=cashier)
+                cashier_id = cashier_profile.user.username
+            except EmployeeProfile.DoesNotExist:
+                cashier_id = "Unknown Cashier"
+
             order_details = []
             subtotal = 0
 
-            # Process each transaction (item in the order)
             for transaction in transactions:
                 item = transaction.get("item", "").strip()
                 quantity = transaction.get("quantity", 1)
                 price = transaction.get("price", 0.0)
 
-                # Validate data
                 if not item or not isinstance(item, str):
                     raise ValueError(f"Invalid item name: {item}")
                 if not isinstance(quantity, (int, float)) or quantity < 1:
@@ -239,13 +269,11 @@ def save_transaction(request):
                 if not isinstance(price, (int, float)) or price < 0:
                     raise ValueError(f"Invalid price for item {item}: {price}")
 
-                # Convert price to float and quantity to int for consistency
                 quantity = int(quantity)
                 price = float(price)
                 item_subtotal = price * quantity
                 subtotal += item_subtotal
 
-                # Save to Transaction model with the same invoice_no
                 Transaction.objects.create(
                     invoice_no=invoice_no,
                     item=item,
@@ -253,7 +281,6 @@ def save_transaction(request):
                     price=price
                 )
 
-                # Add to order details for the invoice
                 order_details.append({
                     "name": item,
                     "quantity": quantity,
@@ -261,14 +288,12 @@ def save_transaction(request):
                     "subtotal": item_subtotal
                 })
 
-            tax = subtotal * 0.1  # 10% tax
+            tax = subtotal * 0.1
             total = subtotal + tax
 
-            # Generate PDF invoice
             print(f"Generating invoice for {invoice_no} with details: {order_details}")
-            pdf_buffer = generate_invoice_pdf(invoice_no, order_details, subtotal, tax, total)
+            pdf_buffer = generate_invoice_pdf(invoice_no, order_details, subtotal, tax, total, cashier_id)
             
-            # Save PDF to media directory
             media_path = os.path.join(settings.MEDIA_ROOT, "invoices", f"invoice_{invoice_no}.pdf")
             os.makedirs(os.path.dirname(media_path), exist_ok=True)
             with open(media_path, "wb") as f:

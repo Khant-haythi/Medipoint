@@ -1,76 +1,85 @@
-
 {% extends "manager/layout.html" %}
 
 {% block title %}
-
   MBA Recommendation Page
-
 {% endblock %}
+
 {% block body %}
 {% load static %}
 
-    <!-- Main Content -->
-    <div class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
-
-        <!-- Welcome Message (for mba_recommendations, with animation) -->
-        <p class="max-w-3xl text-4xl font-extrabold leading-tight text-gradient bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400 animate-slideIn mb-8">Hi, {{ request.user.username }}. Upload Sales Data for Insights</p>
-
-        <!-- MBA Options (Streamlined, Attractive File Upload) -->
-        <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 transform hover:scale-102 transition-all duration-500">
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-                <i class="fas fa-upload mr-3 text-blue-500 dark:text-blue-300 animate-spin-slow"></i>
-                Market Basket Analysis
-            </h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-6 text-lg leading-relaxed">Upload your CSV file to uncover powerful item associations for sets, recipes, or promotions.</p>
-            
-            <!-- File Upload and Analyze CSV Button (Visually Appealing) -->
-            <form id="csvForm" method="POST" enctype="multipart/form-data" class="w-full">
-                {% csrf_token %}
-                <div class="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <input type="file" name="csv_file" accept=".csv" class="p-2 border-none rounded dark:bg-gray-600 dark:text-gray-300 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white file:hover:bg-blue-600 file:dark:bg-blue-400 file:dark:hover:bg-blue-500" required>
-                    <button type="submit" id="analyzeCsvBtn" name="analyze_csv" class="text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-full text-sm px-6 py-3 transform hover:scale-105 transition-transform duration-300">Analyze CSV</button>
-                </div>
-            </form>
-            
-            <!-- Messages and Results Area -->
-            <div id="messages" class="mt-4">
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn {% if message.tags == 'error' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-            <div id="results" class="mt-4 bg-white p-4 rounded shadow dark:bg-gray-800 hidden">
-                <h2 class="text-lg font-semibold mb-2 dark:text-gray-200">Market Basket Analysis Results</h2>
-                <h3 class="text-md font-semibold dark:text-gray-200">Recommendations</h3>
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Antecedents</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Consequents</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Support</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Confidence</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Lift</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recommendationsTable" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                        <!-- Recommendations will be inserted here via JavaScript -->
-                    </tbody>
-                </table>
-
-                <h3 class="text-md font-semibold mt-4 dark:text-gray-200">Top 10 Best-Selling Products</h3>
-                <canvas id="topSellingChart" class="mt-2"></canvas>
-
-                <h3 class="text-md font-semibold mt-4 dark:text-gray-200">Least 10 Selling Products</h3>
-                <canvas id="leastSellingChart" class="mt-2"></canvas>
-            </div>
+<!-- Main Content (Scrollable, No Gap with Navbar) -->
+<div class="p-6 bg-gray-50 dark:bg-gray-900" id="mainContent">
+    <!-- Welcome Message (for mba_recommendations, with animation) -->
+    <p class="max-w-3xl text-4xl font-extrabold leading-tight text-gradient bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400 animate-slideIn mb-4">Hi, {{ request.user.username }}. Upload Sales Data for Insights</p>
+  
+    <!-- MBA Options (Streamlined, Attractive File Upload) -->
+    <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 transform hover:scale-102 transition-all duration-500" id="analysisContainer">
+      <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+        <i class="fas fa-upload mr-3 text-blue-500 dark:text-blue-300 animate-spin-slow"></i>
+        Market Basket Analysis
+      </h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-6 text-lg leading-relaxed">Upload your CSV file to uncover powerful item associations for sets, recipes, or promotions.</p>
+      
+      <!-- File Upload and Analyze CSV Button (Visually Appealing) -->
+      <form id="csvForm" method="POST" enctype="multipart/form-data" class="w-full">
+        {% csrf_token %}
+        <div class="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+          <input type="file" name="csv_file" accept=".csv" class="p-2 border-none rounded dark:bg-gray-600 dark:text-gray-300 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white file:hover:bg-blue-600 file:dark:bg-blue-400 file:dark:hover:bg-blue-500" required>
+          <button type="submit" id="analyzeCsvBtn" name="analyze_csv" class="text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-full text-sm px-6 py-3 transform hover:scale-105 transition-transform duration-300">Analyze CSV</button>
         </div>
+      </form>
+      
+      <!-- Messages and Results Area -->
+      <div id="messages" class="mt-4">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn {% if message.tags == 'error' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+      <div id="results" class="mt-4 bg-white p-4 rounded shadow dark:bg-gray-800 hidden">
+        <h2 class="text-lg font-semibold mb-2 dark:text-gray-200">Market Basket Analysis Results</h2>
+        <h3 class="text-md font-semibold dark:text-gray-200">Recommendations</h3>
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" >
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Antecedents</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Consequents</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Support</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Confidence</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Lift</th>
+            </tr>
+          </thead>
+          <tbody id="recommendationsTable" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+            <!-- Recommendations will be inserted here via JavaScript -->
+          </tbody>
+        </table>
+  
+        <h3 class="text-md font-semibold mt-4 dark:text-gray-200">Top 10 Best-Selling Products</h3>
+        <canvas id="topSellingChart" class="mt-2 w-full"></canvas>
+  
+        <h3 class="text-md font-semibold mt-4 dark:text-gray-200">Least 10 Selling Products</h3>
+        <canvas id="leastSellingChart" class="mt-2 w-full"></canvas>
+      </div>
     </div>
-
-    <!-- Custom CSS for Animations -->
-    <style>
+  </div>
+  
+  <!-- Sidebar Toggle Button (Fixed at Bottom Right) -->
+  <button id="sidebarToggle" class="fixed bottom-4 right-4 bg-gray-500 text-white p-2 rounded-full hover:bg-gray-600 z-50">
+    <svg id="sidebarToggleIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+    </svg>
+  </button>
+  
+  <!-- JavaScript -->
+  
+  <script>
+    // Ensure Tailwind CSS is loaded or include it in your base template
+    // Add custom CSS for animations and scrolling
+    const styles = `
+      <style>
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes bounceIn { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); } }
@@ -80,13 +89,21 @@
         .animate-bounceIn { animation: bounceIn 1s; }
         .animate-spin-slow { animation: spinSlow 4s linear infinite; }
         canvas { max-width: 100%; height: auto; }
+        .dark #results canvas { background-color: #1f2937; }
+        .dark #results .chart-title, .dark #results .chart-axis { color: #e5e7eb; }
+        #mainContent { margin-left:auto; overflow-y: auto; max-height: calc(100vh - 64px);padding: 0; } /* Remove padding and adjust max-height to match navbar height */
+        #analysisContainer { transition: max-height 0.3s ease; }
+        #analysisContainer.overflow-y-auto { overflow-y: auto; max-height: calc(100vh - 300px); }
+        .nav-link.active { background-color: #e5e7eb; }
+        .dark .nav-link.active { background-color: #4a5568; }
         .dark #results canvas {
         background-color: #1f2937; /* Tailwind gray-800 */
         }
-        .dark #results .chart-title,
-        .dark #results .chart-axis {
-        color: #e5e7eb; /* Tailwind gray-200 */
-        }
-    </style>
-    
-{% endblock %}
+        
+
+      </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', styles);
+  </script>
+  
+  {% endblock %}

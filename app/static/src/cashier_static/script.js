@@ -622,4 +622,3 @@ document.querySelector(".print-bills-btn").addEventListener("click", () => {
     showNotification(`Error saving transactions: ${error.message}`, "error");
   });
 });
-

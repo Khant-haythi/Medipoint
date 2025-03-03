@@ -58,3 +58,15 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.invoice_no} - {self.item}"
+    
+    def serialize(self, current_user=None):
+        return {
+
+ 
+        'invoice_no': self.invoice_no,
+        'item': self.item,  # Convert Decimal to float for JSON
+        'quantity ': self.quantity,
+        'price': self.price,  # Assuming Category has a name field
+        'timestamp': self.timestamp,
+    }
+    

@@ -115,6 +115,21 @@ def showproduct(request):
     # print(data)  # For debugging
     return JsonResponse(data)
 
+def showhistory(request):
+    # Fetch all products (ignoring product_id)
+    transactions = Transaction.objects.all().order_by('-timestamp')
+    
+    # Serialize all products
+    serialized_transaction = [transaction.serialize(current_user=request.user) for transaction in transactions]
+    
+    # Create the data dictionary
+    data = {
+        'transactions': serialized_transaction,
+    }
+    
+    # print(data)  # For debugging
+    return JsonResponse(data)
+
 def mba_recommendations(request):
     if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
         csv_file = request.FILES.get("csv_file")

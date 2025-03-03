@@ -1,4 +1,3 @@
-console.log("Script.js loaded successfully at ", new Date().toISOString());
 // Consolidated DOMContentLoaded event listener for initialization
 document.addEventListener("DOMContentLoaded", () => {
   // Load theme from localStorage or default to light
@@ -15,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
     `;
   }
+
   // AJAX for CSV Form Submission
 const csvForm = document.getElementById("csvForm");
 if (csvForm) {
@@ -91,9 +91,7 @@ if (csvForm) {
 
   // Initialize totals on page load
   updateTotals();
-
 });
-
 
 // Function to fetch menu data from the API
 async function fetchMenuData() {
@@ -124,7 +122,7 @@ function updateMenuItems(products) {
     itemDiv.setAttribute("data-name", product.name);
     itemDiv.setAttribute("data-price", product.price); // Use price directly, no division
 
-    const priceDisplay = `$${product.price.toFixed(2)}`; // Format as dollars
+    const priceDisplay = `${product.price.toFixed(2)} MMK`; // Format as dollars
 
     // Assuming the category is available in the product data (e.g., product.category)
     const category = product.category || "Category"; // Default to "Category" if not available
@@ -237,9 +235,9 @@ function updateTotals() {
   const tax = subtotal * 0.1; // 10% tax
   const total = subtotal + tax;
 
-  document.querySelector(".subtotal").textContent = `$${subtotal.toFixed(2)}`;
-  document.querySelector(".tax").textContent = `$${tax.toFixed(2)}`;
-  document.querySelector(".total").textContent = `$${total.toFixed(2)}`;
+  document.querySelector(".subtotal").textContent = `${subtotal.toFixed(2)} MMK`;
+  document.querySelector(".tax").textContent = `${tax.toFixed(2)} MMK`;
+  document.querySelector(".total").textContent = `${total.toFixed(2)} MMK`;
 
   // Check if there are more than 7 items and add/remove scroll
   const orderItemsContainer = document.getElementById("orderItemsContainer");
@@ -271,7 +269,7 @@ function addToOrder(name, price) {
     newItem.innerHTML = `
       <div>
         <h3 class="text-lg font-semibold dark:text-gray-200">${name}</h3>
-        <p class="text-gray-500 text-sm dark:text-gray-400">$${price}</p>
+        <p class="text-gray-500 text-sm dark:text-gray-400">${price} MMK</p>
       </div>
       <div class="flex items-center space-x-2">
         <button class="bg-gray-200 p-1 rounded dark:bg-gray-700 minus-btn">-</button>
@@ -340,162 +338,6 @@ document.getElementById("sidebarToggle").addEventListener("click", () => {
     `;
   }
 });
-
-// Function to populate MBA results with bar graphs
-function populateResults(results) {
-  console.log("Populating results with:", results);
-  const recommendationsTable = document.getElementById("recommendationsTable");
-  const topSellingCanvas = document.getElementById("topSellingChart");
-  const leastSellingCanvas = document.getElementById("leastSellingChart");
-
-  // Log canvas availability
-  console.log("Top selling canvas:", topSellingCanvas);
-  console.log("Least selling canvas:", leastSellingCanvas);
-
-  // Clear existing content
-  if (recommendationsTable) recommendationsTable.innerHTML = "";
-
-  // Populate Recommendations Table
-  if (results.recommendations && results.recommendations.length > 0) {
-    results.recommendations.forEach(item => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.antecedents}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.consequents}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.support.toFixed(4)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.confidence.toFixed(4)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.lift.toFixed(4)}</td>
-      `;
-      recommendationsTable.appendChild(row);
-    });
-  }
-
-  // Destroy existing charts safely with detailed logging
-  console.log("Top selling chart before destroy:", window.topSellingChart);
-  if (window.topSellingChart && typeof window.topSellingChart.destroy === "function") {
-    window.topSellingChart.destroy();
-    console.log("Destroyed existing topSellingChart");
-  } else {
-    console.log("No valid topSellingChart to destroy or it’s not a Chart instance");
-  }
-
-  console.log("Least selling chart before destroy:", window.leastSellingChart);
-  if (window.leastSellingChart && typeof window.leastSellingChart.destroy === "function") {
-    window.leastSellingChart.destroy();
-    console.log("Destroyed existing leastSellingChart");
-  } else {
-    console.log("No valid leastSellingChart to destroy or it’s not a Chart instance");
-  }
-
-  // Populate Top Selling Bar Graph
-  if (results.top_selling && results.top_selling.length > 0 && topSellingCanvas) {
-    try {
-      const labels = results.top_selling.map(product => product.item);
-      const data = results.top_selling.map(product => product.count);
-
-      window.topSellingChart = new Chart(topSellingCanvas.getContext("2d"), {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [{
-            label: "Sales Count",
-            data: data,
-            backgroundColor: "rgba(54, 162, 235, 0.8)",
-            borderColor: "rgba(54, 162, 235, 1)",
-            borderWidth: 1,
-            hoverBackgroundColor: "rgba(54, 162, 235, 1)",
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            title: {
-              display: true,
-              text: "Top 10 Best-Selling Products",
-              font: { size: 16, weight: "bold" },
-              color: "#333"
-            }
-          },
-          scales: {
-            y: { beginAtZero: true, title: { display: true, text: "Sales Count", font: { size: 14 } }, ticks: { color: "#666" } },
-            x: {
-              title: { display: true, text: "Product", font: { size: 14 } },
-              ticks: {
-                color: "#666",
-                callback: function(value, index, values) {
-                  const label = this.getLabelForValue(value);
-                  return label.length > 10 ? label.substr(0, 10) + "..." : label;
-                }
-              }
-            }
-          },
-          animation: { duration: 1000, easing: "easeOutBounce" }
-        }
-      });
-      console.log("Top selling chart created successfully:", window.topSellingChart);
-    } catch (error) {
-      console.error("Error creating top selling chart:", error);
-    }
-  } else {
-    console.log("Top selling chart not created: missing data or canvas");
-  }
-
-  // Populate Least Selling Bar Graph
-  if (results.least_selling && results.least_selling.length > 0 && leastSellingCanvas) {
-    try {
-      const labels = results.least_selling.map(product => product.item);
-      const data = results.least_selling.map(product => product.count);
-
-      window.leastSellingChart = new Chart(leastSellingCanvas.getContext("2d"), {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [{
-            label: "Sales Count",
-            data: data,
-            backgroundColor: "rgba(255, 99, 132, 0.8)",
-            borderColor: "rgba(255, 99, 132, 1)",
-            borderWidth: 1,
-            hoverBackgroundColor: "rgba(255, 99, 132, 1)",
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            title: {
-              display: true,
-              text: "Least 10 Selling Products",
-              font: { size: 16, weight: "bold" },
-              color: "#333"
-            }
-          },
-          scales: {
-            y: { beginAtZero: true, title: { display: true, text: "Sales Count", font: { size: 14 } }, ticks: { color: "#666" } },
-            x: {
-              title: { display: true, text: "Product", font: { size: 14 } },
-              ticks: {
-                color: "#666",
-                callback: function(value, index, values) {
-                  const label = this.getLabelForValue(value);
-                  return label.length > 10 ? label.substr(0, 10) + "..." : label;
-                }
-              }
-            }
-          },
-          animation: { duration: 1000, easing: "easeOutBounce" }
-        }
-      });
-      console.log("Least selling chart created successfully:", window.leastSellingChart);
-    } catch (error) {
-      console.error("Error creating least selling chart:", error);
-    }
-  } else {
-    console.log("Least selling chart not created: missing data or canvas");
-  }
-}
-
 
 function getCSRFToken() {
   // Get the CSRF token from the cookie

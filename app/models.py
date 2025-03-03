@@ -51,6 +51,7 @@ class Transaction(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     timestamp = models.DateTimeField(auto_now_add=True)
+    cashier = models.ForeignKey('EmployeeProfile', on_delete=models.CASCADE, null=True, blank=True)  # Link to cashier/employee
 
     class Meta:
         # Add a unique constraint to ensure no duplicate items in the same invoice

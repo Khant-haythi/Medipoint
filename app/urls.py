@@ -3,6 +3,7 @@ from django.urls import path, include
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -19,9 +20,12 @@ urlpatterns = [
     path('recommendations/', views.mba_recommendations, name='mba_recommendations'), 
     path('save-transaction/', views.save_transaction, name='save_transaction'),
     path('transaction-history/', views.transaction_history, name='transaction_history'),
-    path('transaction-history-cashier/', views.transaction_history_cashier, name='transaction_history_cashier'),
-
+    path('transactions/download/csv/', views.download_transactions_csv, name='download_transactions_csv'),
+    path('data/monthly/', views.dashboard_data_monthly, name='dashboard_data_monthly'),
+    path('data/yearly/', views.dashboard_data_yearly, name='dashboard_data_yearly'),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += staticfiles_urlpatterns()

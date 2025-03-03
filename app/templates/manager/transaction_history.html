@@ -7,9 +7,16 @@
 {% block body %}
 {% load static %}
 
-<div class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
-    <h1 class="text-2xl font-bold mb-4 dark:text-gray-200">Transaction History</h1>
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+<!-- Main Content (Scrollable, Adjusted for Navbar) -->
+<div class="flex-1 p-6 bg-gray-50 dark:bg-gray-900" id="mainContent">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold dark:text-gray-200">Transaction History</h1>
+        <a href="{% url 'download_transactions_csv' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:bg-blue-800 dark:hover:bg-blue-900 transition-colors duration-200">
+            Download as CSV
+        </a>
+    </div>
+    <!-- Table Container with Scroll -->
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-y-auto" id="analysisContainer">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-blue-600 dark:bg-blue-800 text-white">
                 <tr>
@@ -32,4 +39,22 @@
         </table>
     </div>
 </div>
+
+<!-- Custom Styles (Updated to Remove Sticky Behavior) -->
+<script>
+  const styles = `
+    <style>
+      #mainContent {
+        overflow-y: auto;
+        max-height: calc(100vh - 64px); /* Adjust 64px based on your navbar height */
+      }
+      #analysisContainer {
+        max-height: calc(100vh - 150px); /* Adjust based on header and padding */
+        overflow-y: auto;
+      }
+    </style>
+  `;
+  document.head.insertAdjacentHTML('beforeend', styles);
+</script>
+
 {% endblock %}

@@ -1,133 +1,131 @@
 {% extends "manager/layout.html" %}
 
 {% block title %}
-
-  Manage Employee Page
-
+  Dashboard
 {% endblock %}
+
 {% block body %}
 {% load static %}
-    <!-- Main Section -->
-    <main class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
-        
-        <!-- Welcome Message and KPIs -->
-        <div class="mb-6 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Hi, {{ request.user.username }}, Good Morning</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-2">
-                Your dashboard gives you views of key performance or business processes.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Sales</h3>
-                    <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">31.50</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 60%"></div>
-                    </div>
+
+<!-- Main Section -->
+<main class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
+    <!-- Welcome Message and KPIs -->
+    <div class="mb-6 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Hi, {{ request.user.username }}, Good Morning</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-2">
+            Your dashboard gives you views of key performance or business processes.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Sales</h3>
+                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">${{ total_sales|floatformat:2 }}</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
+                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: '{% if sales_progress is not none %}{{ sales_progress }}%{% else %}0%{% endif %}';"></div>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Cost</h3>
-                    <p class="text-2xl font-bold text-pink-600 dark:text-pink-400 mt-2">$4,598</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                        <div class="bg-pink-600 h-2.5 rounded-full" style="width: 70%"></div>
-                    </div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Cost</h3>
+                <p class="text-2xl font-bold text-pink-600 dark:text-pink-400 mt-2">${{ total_cost|floatformat:2 }}</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
+                    <div class="bg-pink-600 h-2.5 rounded-full" style="width: '{% if cost_progress is not none %}{{ cost_progress }}%{% else %}0%{% endif %}' ;"></div>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Product Sold</h3>
-                    <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">4,589 M</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                        <div class="bg-green-600 h-2.5 rounded-full" style="width: 80%"></div>
-                    </div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Products Sold</h3>
+                <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">{{ products_sold|intcomma }}</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
+                    <div class="bg-green-600 h-2.5 rounded-full" style="width:' {% if products_progress is not none %}{{ products_progress }}%{% else %}0%{% endif %}';"></div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Overview Chart -->
-            <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Overview</h2>
-                    <select class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateChart('overview', this.value)">
-                        <option value="This Month">This Month</option>
-                        <option value="This Year">This Year</option>
-                    </select>
-                </div>
-                <canvas id="overviewChart" class="w-full"></canvas>
+    <!-- Charts and Lists Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Overview Chart (Left Column, Full Width on Mobile) -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Overview</h2>
+                <select class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateChart('overview', this.value)">
+                    <option value="This Month">This Month</option>
+                    <option value="This Year">This Year</option>
+                </select>
             </div>
-
-            <!-- Revenue Vs Cost Chart -->
-            <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Revenue Vs Cost</h2>
-                    <select class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateChart('revenueVsCost', this.value)">
-                        <option value="This Month">This Month</option>
-                        <option value="This Year">This Year</option>
-                    </select>
-                </div>
-                <canvas id="revenueVsCostChart" class="w-full"></canvas>
-            </div>
+            <canvas id="overviewChart" class="w-full"></canvas>
         </div>
 
-        <!-- Chart.js Initialization -->
-        <script>
-            // Initialize Overview Chart (Candlestick/Line Chart)
-            const overviewCtx = document.getElementById('overviewChart').getContext('2d');
+        <!-- Cashier List and Transaction History (Right Column, Stacked on Mobile) -->
+        <div class="lg:col-span-1 grid grid-cols-1 gap-6">
+            <!-- Cashier List -->
+            <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Cashier List</h2>
+                <ul class="space-y-2">
+                    {% for cashier in cashiers %}
+                    <li class="flex items-center justify-between p-2 bg-gray-50 rounded dark:bg-gray-700">
+                        <span class="text-gray-800 dark:text-gray-200">{{ cashier.name }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Sales: ${{ cashier.total_sales|floatformat:2 }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800 overflow-y-auto" style="max-height: 300px;">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Recent Transactions</h2>
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-100 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Invoice No</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Item</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Qty</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                        {% for transaction in recent_transactions %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.invoice_no }}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.item }}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.quantity }}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ transaction.timestamp|date:"M d, Y, g:i a" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Initialization with Real Data -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Function to safely handle Django template variables
+        function getChartData(variableName) {
+            try {
+                const data = "{{ variableName|safe }}";
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error(`Error parsing ${variableName}:`, e);
+                return [];
+            }
+        }
+
+        // Initialize Overview Chart (Line Chart for Sales Trends)
+        const overviewCtx = document.getElementById('overviewChart').getContext('2d');
+        try {
             const overviewChart = new Chart(overviewCtx, {
-                type: 'candlestick', // Use candlestick for price movements (like in the image)
+                type: 'line',
                 data: {
+                    labels: getChartData('overview_labels'),
                     datasets: [{
-                        label: 'Price Movement',
-                        data: [
-                            { x: '05:00', o: 60, h: 65, l: 55, c: 62 },
-                            { x: '08:00', o: 62, h: 68, l: 58, c: 65 },
-                            { x: '11:00', o: 65, h: 70, l: 60, c: 68 },
-                            { x: '14:00', o: 68, h: 72, l: 63, c: 65 },
-                            { x: '17:00', o: 65, h: 67, l: 60, c: 62 },
-                            { x: '20:00', o: 62, h: 64, l: 58, c: 60 },
-                            { x: '23:00', o: 60, h: 63, l: 57, c: 59 },
-                            { x: '02:00', o: 59, h: 61, l: 55, c: 58 },
-                            { x: '05:00', o: 58, h: 60, l: 54, c: 56 },
-                        ],
+                        label: 'Sales',
+                        data: getChartData('overview_data'),
                         borderColor: 'rgba(54, 162, 235, 1)',
                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
                     }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { type: 'category', title: { display: true, text: 'Time' } },
-                        y: { title: { display: true, text: 'Price' } }
-                    }
-                }
-            });
-
-            // Initialize Revenue Vs Cost Chart (Bar + Line Chart)
-            const revenueVsCostCtx = document.getElementById('revenueVsCostChart').getContext('2d');
-            const revenueVsCostChart = new Chart(revenueVsCostCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Mar', 'May', 'Jul'],
-                    datasets: [
-                        {
-                            label: 'Revenue',
-                            data: [3000, 2500, 2000, 1000],
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1,
-                            type: 'bar'
-                        },
-                        {
-                            label: 'Cost',
-                            data: [2000, 1800, 1500, 800],
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            borderWidth: 1,
-                            type: 'line',
-                            fill: false,
-                            tension: 0.1
-                        }
-                    ]
                 },
                 options: {
                     responsive: true,
@@ -135,49 +133,50 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: { display: true, text: 'Amount' },
+                            title: { display: true, text: 'Sales ($)' },
                             ticks: { callback: value => `$${value}` }
                         },
-                        x: { title: { display: true, text: 'Month' } }
+                        x: { title: { display: true, text: 'Date' } }
                     },
                     plugins: {
-                        legend: { position: 'top' }
+                        legend: { display: false }
                     }
                 }
             });
+        } catch (e) {
+            console.error('Error initializing chart:', e);
+        }
 
-            // Function to update charts based on time period
-            function updateChart(chartType, period) {
-                const chart = chartType === 'overview' ? overviewChart : revenueVsCostChart;
-                if (period === 'This Year') {
-                    // Example: Update with yearly data (simplified for demo)
-                    if (chartType === 'overview') {
-                        chart.data.datasets[0].data = [
-                            { x: 'Jan', o: 50, h: 60, l: 40, c: 55 },
-                            { x: 'Feb', o: 55, h: 65, l: 45, c: 60 },
-                            { x: 'Mar', o: 60, h: 70, l: 50, c: 65 },
-                            { x: 'Apr', o: 65, h: 75, l: 55, c: 70 },
-                            { x: 'May', o: 70, h: 80, l: 60, c: 75 },
-                            { x: 'Jun', o: 75, h: 85, l: 65, c: 80 },
-                            { x: 'Jul', o: 80, h: 90, l: 70, c: 85 },
-                            { x: 'Aug', o: 85, h: 95, l: 75, c: 90 },
-                            { x: 'Sep', o: 90, h: 100, l: 80, c: 95 },
-                            { x: 'Oct', o: 95, h: 105, l: 85, c: 100 },
-                            { x: 'Nov', o: 100, h: 110, l: 90, c: 105 },
-                            { x: 'Dec', o: 105, h: 115, l: 95, c: 110 },
-                        ];
-                    } else {
-                        chart.data.labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        chart.data.datasets[0].data = [4000, 3800, 3600, 3400, 3200, 3000, 2800, 2600, 2400, 2200, 2000, 1800];
-                        chart.data.datasets[1].data = [3000, 2800, 2600, 2400, 2200, 2000, 1800, 1600, 1400, 1200, 1000, 800];
-                    }
-                } else {
-                    // Default to monthly data (already set in initialization)
-                }
-                chart.update();
+        // Function to update charts based on time period
+        function updateChart(chartType, period) {
+            const chart = overviewChart;
+            if (period === 'This Year') {
+                // Fetch yearly data via AJAX or update with context data
+                fetch('/dashboard/data/yearly/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (chart) {
+                            chart.data.labels = data.labels || [];
+                            chart.data.datasets[0].data = data.sales || [];
+                            chart.update();
+                        }
+                    })
+                    .catch(error => console.error('Error fetching yearly data:', error));
+            } else {
+                // Default to monthly data (already set in initialization)
+                fetch('/dashboard/data/monthly/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (chart) {
+                            chart.data.labels = data.labels || [];
+                            chart.data.datasets[0].data = data.sales || [];
+                            chart.update();
+                        }
+                    })
+                    .catch(error => console.error('Error fetching monthly data:', error));
             }
-        </script>
-    </main>
-
+        }
+    </script>
+</main>
 
 {% endblock %}

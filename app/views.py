@@ -10,8 +10,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.core.files.storage import FileSystemStorage
-import os,json,datetime,io,uuid
+import os,json,datetime,io,uuid,csv
 from django.db import IntegrityError
+from django.db.models import Sum
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -44,9 +45,53 @@ def login_view(request):
 def admin_dashboard(request):
     profile = EmployeeProfile.objects.get(user=request.user)
     if profile.role != 'admin':
-        return redirect('cashier_dashboard')
+        return redirect('cashier_dashboard')  # Adjust 'cashier_dashboard' URL name if different
     
-    return render(request, 'manager/index.html')
+    # Total Sales (Sum of transaction total prices)
+    total_sales = Transaction.objects.aggregate(total=Sum('total_price'))['total'] or 0
+    sales_progress = min(100, (total_sales / 50000) * 100)  # Example: 100% at $50,000
+
+    # Total Cost (Sum of product costs based on quantities sold)
+    # Assuming each transaction has a quantity and we use the product's cost
+    transactions = Transaction.objects.select_related('item')
+    total_cost = 0
+    for transaction in transactions:
+        try:
+            product = Product.objects.get(name=transaction.item)  # Adjust based on how you link items to products
+            total_cost += product.cost * transaction.quantity  # Adjust if 'cost' field name differs
+        except Product.DoesNotExist:
+            continue
+    cost_progress = min(100, (total_cost / 10000) * 100)  # Example: 100% at $10,000
+
+    # Products Sold (Sum of quantities from transactions)
+    products_sold = Transaction.objects.aggregate(total=Sum('quantity'))['total'] or 0
+    products_progress = min(100, (products_sold / 10000) * 100)  # Example: 100% at 10,000 units
+
+    # Cashiers (Employees with their total sales, inferred from transactions)
+    # Assuming Transaction has a cashier field linking to Employee
+    cashiers = EmployeeProfile.objects.all().annotate(total_sales=Sum('transaction__total_price'))
+
+    # Recent Transactions (Last 10 transactions, for example)
+    recent_transactions = Transaction.objects.order_by('-timestamp')[:10]
+
+    # Overview Chart Data (Monthly sales by default)
+    monthly_sales = Transaction.objects.values('timestamp__month', 'timestamp__year').annotate(total=Sum('total_price')).order_by('timestamp')
+    overview_labels = [f"{s['timestamp__month']}/{s['timestamp__year']}" for s in monthly_sales]
+    overview_data = [float(s['total']) for s in monthly_sales]
+
+    context = {
+        'total_sales': total_sales,
+        'sales_progress': sales_progress,
+        'total_cost': total_cost,
+        'cost_progress': cost_progress,
+        'products_sold': products_sold,
+        'products_progress': products_progress,
+        'cashiers': cashiers,
+        'recent_transactions': recent_transactions,
+        'overview_labels': json.dumps(overview_labels),
+        'overview_data': json.dumps(overview_data),
+    }
+    return render(request, 'manager/index.html', context)
 
 # Cashier dashboard
 @login_required
@@ -336,6 +381,42 @@ def transaction_history(request):
     transactions = Transaction.objects.all().order_by('-timestamp')
     return render(request, 'manager/transaction_history.html', {'transactions': transactions})
 
-def transaction_history_cashier(request):
-    transactions = Transaction.objects.all().order_by('-timestamp')
-    return render(request, 'cashier/cashier_transaction.html', {'transactions': transactions})
+def download_transactions_csv(request):
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="transaction_history.csv"'
+
+    # Create a CSV writer object
+    writer = csv.writer(response)
+    
+    # Write the header row (matching your table columns)
+    writer.writerow(['Invoice No', 'Item', 'Quantity', 'Timestamp'])
+
+    # Fetch the transactions from the database
+    transactions = Transaction.objects.all()  # Adjust queryset as needed
+
+    # Write data rows
+    for transaction in transactions:
+        writer.writerow([
+            transaction.invoice_no,
+            transaction.item,
+            transaction.quantity,
+            transaction.timestamp
+        ])
+
+    return response
+
+
+
+# AJAX endpoints for chart updates (optional)
+def dashboard_data_monthly(request):
+    monthly_sales = Transaction.objects.values('timestamp__month', 'timestamp__year').annotate(total=Sum('total_price')).order_by('timestamp')
+    labels = [f"{s['timestamp__month']}/{s['timestamp__year']}" for s in monthly_sales]
+    data = [float(s['total']) for s in monthly_sales]
+    return JsonResponse({'labels': labels, 'sales': data})
+
+def dashboard_data_yearly(request):
+    yearly_sales = Transaction.objects.values('timestamp__year').annotate(total=Sum('total_price')).order_by('timestamp')
+    labels = [str(s['timestamp__year']) for s in yearly_sales]
+    data = [float(s['total']) for s in yearly_sales]
+    return JsonResponse({'labels': labels, 'sales': data})

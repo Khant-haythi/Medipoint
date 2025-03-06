@@ -6,6 +6,7 @@
 
 {% block body %}
 {% load static %}
+{% load humanize %}
 
 <!-- Main Section -->
 <main class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
@@ -18,23 +19,23 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Sales</h3>
-                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">${{ total_sales|floatformat:2 }}</p>
+                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2 total-sales">${{ total_sales|floatformat:2 }}</p>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: '{% if sales_progress is not none %}{{ sales_progress }}%{% else %}0%{% endif %}';"></div>
+                    <div class="bg-blue-600 h-2.5 rounded-full sales-progress" style="width: '{% if sales_progress is not none %}{{ sales_progress }}%{% else %}0%{% endif %}'';"></div>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Cost</h3>
-                <p class="text-2xl font-bold text-pink-600 dark:text-pink-400 mt-2">${{ total_cost|floatformat:2 }}</p>
+                <p class="text-2xl font-bold text-pink-600 dark:text-pink-400 mt-2 total-cost">${{ total_cost|floatformat:2 }}</p>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                    <div class="bg-pink-600 h-2.5 rounded-full" style="width: '{% if cost_progress is not none %}{{ cost_progress }}%{% else %}0%{% endif %}' ;"></div>
+                    <div class="bg-pink-600 h-2.5 rounded-full cost-progress" style="width: {% if cost_progress is not none %}{{ cost_progress }}%{% else %}0%{% endif %};"></div>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Products Sold</h3>
-                <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">{{ products_sold|intcomma }}</p>
+                <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-2 products-sold">{{ products_sold|intcomma }}</p>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                    <div class="bg-green-600 h-2.5 rounded-full" style="width:' {% if products_progress is not none %}{{ products_progress }}%{% else %}0%{% endif %}';"></div>
+                    <div class="bg-green-600 h-2.5 rounded-full products-progress" style="width: {% if products_progress is not none %}{{ products_progress }}%{% else %}0%{% endif %};"></div>
                 </div>
             </div>
         </div>
@@ -46,12 +47,16 @@
         <div class="lg:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Overview</h2>
-                <select class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateChart('overview', this.value)">
-                    <option value="This Month">This Month</option>
-                    <option value="This Year">This Year</option>
+                <select id="timePeriod" class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateDashboard(this.value)">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly" selected>Monthly</option>
+                    <option value="yearly">Yearly</option>
                 </select>
             </div>
-            <canvas id="overviewChart" class="w-full"></canvas>
+            <div class="relative w-full h-64">
+                <canvas id="overviewChart" class="absolute inset-0 w-full h-full"></canvas>
+            </div>
         </div>
 
         <!-- Cashier List and Transaction History (Right Column, Stacked on Mobile) -->
@@ -102,24 +107,25 @@
         // Function to safely handle Django template variables
         function getChartData(variableName) {
             try {
-                const data = "{{ variableName|safe }}";
-                return data ? JSON.parse(data) : [];
+                const data = JSON.parse('{{ variableName|escapejs }}');
+                return data && data.length ? JSON.parse(data) : ["No Data", "No Data"]; // Fallback to two labels for visibility
             } catch (e) {
                 console.error(`Error parsing ${variableName}:`, e);
-                return [];
+                return ["No Data", "No Data"]; // Fallback to two labels for visibility
             }
         }
 
         // Initialize Overview Chart (Line Chart for Sales Trends)
         const overviewCtx = document.getElementById('overviewChart').getContext('2d');
+        let overviewChart;  // Use 'let' instead of redeclaring with 'const' to avoid "Identifier 'overviewChart' has already been declared"
         try {
-            const overviewChart = new Chart(overviewCtx, {
-                type: 'line',
+            overviewChart = new Chart(overviewCtx, {
+                type: 'line',  // Explicitly set to line chart
                 data: {
                     labels: getChartData('overview_labels'),
                     datasets: [{
                         label: 'Sales',
-                        data: getChartData('overview_data'),
+                        data: getChartData('overview_data').map(val => parseFloat(val) || 0), // Ensure numeric data, fallback to 0
                         borderColor: 'rgba(54, 162, 235, 1)',
                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
                         borderWidth: 2,
@@ -130,13 +136,17 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    aspectRatio: 2,  // Set a fixed aspect ratio to control size
                     scales: {
                         y: {
                             beginAtZero: true,
                             title: { display: true, text: 'Sales ($)' },
                             ticks: { callback: value => `$${value}` }
                         },
-                        x: { title: { display: true, text: 'Date' } }
+                        x: {
+                            title: { display: true, text: 'Date' },
+                            ticks: { autoSkip: true, maxTicksLimit: 10 }  // Limit x-axis labels to prevent stretching
+                        }
                     },
                     plugins: {
                         legend: { display: false }
@@ -147,35 +157,48 @@
             console.error('Error initializing chart:', e);
         }
 
-        // Function to update charts based on time period
-        function updateChart(chartType, period) {
-            const chart = overviewChart;
-            if (period === 'This Year') {
-                // Fetch yearly data via AJAX or update with context data
-                fetch('/dashboard/data/yearly/')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (chart) {
-                            chart.data.labels = data.labels || [];
-                            chart.data.datasets[0].data = data.sales || [];
-                            chart.update();
-                        }
-                    })
-                    .catch(error => console.error('Error fetching yearly data:', error));
-            } else {
-                // Default to monthly data (already set in initialization)
-                fetch('/dashboard/data/monthly/')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (chart) {
-                            chart.data.labels = data.labels || [];
-                            chart.data.datasets[0].data = data.sales || [];
-                            chart.update();
-                        }
-                    })
-                    .catch(error => console.error('Error fetching monthly data:', error));
-            }
+        // Function to update dashboard (chart and KPIs) based on time period
+        function updateDashboard(period) {
+            fetch(`/dashboard/data/${period}/`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (overviewChart) {
+                        overviewChart.data.labels = data.labels.length ? data.labels : ["No Data", "No Data"];
+                        overviewChart.data.datasets[0].data = (data.sales || []).map(val => parseFloat(val) || 0);
+                        overviewChart.update();
+                    }
+                })
+                .catch(error => console.error(`Error fetching ${period} data:`, error));
+
+            // Update KPIs dynamically via AJAX
+            fetch(`/dashboard/kpis/${period}/`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(kpiData => {
+                    document.querySelector('.total-sales').textContent = `$${kpiData.total_sales.toFixed(2)}`;
+                    document.querySelector('.total-cost').textContent = `$${kpiData.total_cost.toFixed(2)}`;
+                    document.querySelector('.products-sold').textContent = kpiData.products_sold.toLocaleString();
+                    document.querySelector('.sales-progress').style.width = `${Math.min(100, (kpiData.total_sales / 50000) * 100)}%`;
+                    document.querySelector('.cost-progress').style.width = `${Math.min(100, (kpiData.total_cost / 10000) * 100)}%`;
+                    document.querySelector('.products-progress').style.width = `${Math.min(100, (kpiData.products_sold / 10000) * 100)}%`;
+                })
+                .catch(error => console.error('Error fetching KPIs:', error));
         }
+
+        // Initialize with monthly data (default) after DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.total-sales, .total-cost, .products-sold, .sales-progress, .cost-progress, .products-progress');
+            if (elements.length === 6) {  // Ensure all required elements exist
+                updateDashboard('monthly');
+            } else {
+                console.error('Required DOM elements for KPIs not found');
+            }
+        });
     </script>
 </main>
 

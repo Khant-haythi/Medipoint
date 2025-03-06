@@ -214,12 +214,17 @@ document.querySelectorAll(".nav-link").forEach((link) => {
     });
     document.getElementById(section).classList.remove("hidden");
 
-    // Fetch menu data only if "menu" section is active
+    // Fetch data based on the active section
     if (section === "menu") {
       fetchMenuData();
+    } else if (section === "history") {
+      fetchHistoryData();
     }
   });
 });
+function formatPrice(price) {
+  return `${parseFloat(price).toFixed(2)} MMK`;
+}
 
 // Function to update order totals
 function updateTotals() {
@@ -464,3 +469,108 @@ document.querySelector(".print-bills-btn").addEventListener("click", () => {
     showNotification(`Error saving transactions: ${error.message}`, "error");
   });
 });
+
+// Function to fetch history data from the API
+async function fetchHistoryData() {
+  const historyContent = document.getElementById("history-content");
+  if (!historyContent) {
+    console.warn("History content element not found.");
+    return;
+  }
+
+  // Show loading state
+  historyContent.innerHTML = `
+    <p class="text-gray-600 dark:text-gray-400">Loading transactions...</p>
+  `;
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/history/");
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    displayHistoryData(data);
+  } catch (error) {
+    console.error("Error fetching history data:", error);
+    historyContent.innerHTML = `
+      <p class="text-red-600 dark:text-red-400">Failed to load history data: ${error.message}</p>
+    `;
+  }
+}
+
+function displayHistoryData(data) {
+  const historyContent = document.getElementById("history-content");
+  if (!historyContent) {
+    console.warn("History content element not found in displayHistoryData.");
+    return;
+  }
+
+  console.log("Displaying history data:", data);
+
+  const transactions = data.transactions || [];
+  if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+    console.log("No transactions to display.");
+    historyContent.innerHTML = `
+      <p class="text-gray-600 dark:text-gray-400">No transactions found.</p>
+    `;
+    return;
+  }
+
+  // Log the first transaction to inspect its structure
+  if (transactions.length > 0) {
+    console.log("First transaction structure:", transactions[0]);
+  }
+
+  let tableHTML = `
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Invoice No</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+  `;
+
+  transactions.forEach(transaction => {
+    const invoiceNo = transaction.invoice_no || "N/A";
+    const item = transaction.item || "N/A";
+    const quantity = transaction['quantity '] || 0;
+    const price = transaction.price ? formatPrice(transaction.price) : "N/A";
+    const timestamp = transaction.timestamp
+      ? new Date(transaction.timestamp).toLocaleString()
+      : "N/A";
+
+   // console.log("Processing transaction:", transaction);
+
+    tableHTML += `
+      <tr>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">${invoiceNo}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">${item}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">${quantity}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">${price}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">${timestamp}</td>
+      </tr>
+    `;
+  });
+
+  tableHTML += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  console.log("Updating history content with table HTML");
+  historyContent.innerHTML = tableHTML;
+
+  
+}
+
+// Helper function to format price (already suggested in previous response, adding here for completeness)
+function formatPrice(price) {
+  return `${parseFloat(price).toFixed(2)} MMK`;
+}

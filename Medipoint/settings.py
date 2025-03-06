@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app',  # Your app name here
-    'compressor',  # new
+    'compressor',
+    'django.contrib.humanize',  # new
 ]
 
 MIDDLEWARE = [

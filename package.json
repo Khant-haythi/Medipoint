@@ -3,6 +3,26 @@
     "@tailwindcss/vite": "^4.0.7"
   },
   "devDependencies": {
-    "tailwindcss": "^4.0.7"
-  }
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.10"
+  },
+  "name": "medipoint",
+  "version": "1.0.0",
+  "description": "<<<<<<< HEAD # Medipoint ======= (remote changes) >>>>>>> (commit hash) # Medipoint Project",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Khant-haythi/Medipoint.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Khant-haythi/Medipoint/issues"
+  },
+  "homepage": "https://github.com/Khant-haythi/Medipoint#readme"
 }

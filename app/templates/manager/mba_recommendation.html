@@ -42,7 +42,7 @@
       <div id="results" class="mt-4 bg-white p-4 rounded shadow dark:bg-gray-800 hidden">
         <h2 class="text-lg font-semibold mb-2 dark:text-gray-200">Market Basket Analysis Results</h2>
         <h3 class="text-md font-semibold dark:text-gray-200">Recommendations</h3>
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" >
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Antecedents</th>
@@ -62,6 +62,19 @@
   
         <h3 class="text-md font-semibold mt-4 dark:text-gray-200">Least 10 Selling Products</h3>
         <canvas id="leastSellingChart" class="mt-2 w-full"></canvas>
+
+        <!-- Product Sales Pie Chart with Time Period Selector -->
+        <div class="mt-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-md font-semibold dark:text-gray-200">Product Sales Distribution</h3>
+            <select id="productSalesPeriod" class="border rounded p-2 text-gray-500 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600" onchange="updateProductSalesChart(this.value)">
+              <option value="weekly">Weekly</option>
+              <option value="monthly" selected>Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+          <canvas id="productSalesPieChart" class="mt-2 w-full" style="max-height: 400px;"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -91,19 +104,18 @@
         canvas { max-width: 100%; height: auto; }
         .dark #results canvas { background-color: #1f2937; }
         .dark #results .chart-title, .dark #results .chart-axis { color: #e5e7eb; }
-        #mainContent { margin-left:auto; overflow-y: auto; max-height: calc(100vh - 64px);padding: 0; } /* Remove padding and adjust max-height to match navbar height */
+        #mainContent { margin-left:auto; overflow-y: auto; max-height: calc(100vh - 64px); padding: 0; }
         #analysisContainer { transition: max-height 0.3s ease; }
         #analysisContainer.overflow-y-auto { overflow-y: auto; max-height: calc(100vh - 300px); }
         .nav-link.active { background-color: #e5e7eb; }
         .dark .nav-link.active { background-color: #4a5568; }
         .dark #results canvas {
-        background-color: #1f2937; /* Tailwind gray-800 */
+          background-color: #1f2937; /* Tailwind gray-800 */
         }
-        
-
+        #productSalesPieChart { max-height: 400px; } /* Ensure pie chart has height */
       </style>
     `;
     document.head.insertAdjacentHTML('beforeend', styles);
   </script>
   
-  {% endblock %}
+{% endblock %}

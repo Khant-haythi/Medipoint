@@ -11,8 +11,12 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.core.files.storage import FileSystemStorage
 import os,json,datetime,io,uuid,csv
+from mlxtend.frequent_patterns import association_rules, apriori
+import pandas as pd
 from django.db import IntegrityError
-from django.db.models import Sum
+from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import timedelta
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -22,6 +26,9 @@ from .market_basket import perform_market_basket_analysis
 from django.conf import settings
 from app import market_basket
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import F
+from django.db.models.functions import ExtractHour, ExtractDay
+from datetime import datetime  
 
 # Login view
 def login_view(request):
@@ -40,44 +47,65 @@ def login_view(request):
             messages.error(request, 'Invalid username or password.')
     return render(request, 'login.html')
 
-# Admin dashboard
+
 @login_required
 def admin_dashboard(request):
     profile = EmployeeProfile.objects.get(user=request.user)
     if profile.role != 'admin':
         return redirect('cashier_dashboard')  # Adjust 'cashier_dashboard' URL name if different
     
-    # Total Sales (Sum of transaction total prices)
-    total_sales = Transaction.objects.aggregate(total=Sum('total_price'))['total'] or 0
-    sales_progress = min(100, (total_sales / 50000) * 100)  # Example: 100% at $50,000
+    # Default to monthly data for initial render
+    try:
+        monthly_sales = Transaction.objects.values('timestamp__month', 'timestamp__year').annotate(total=Sum(F('quantity') * F('price'))).order_by('timestamp')
+        overview_labels = [f"{s['timestamp__month']}/{s['timestamp__year']}" for s in monthly_sales if s['total'] is not None]
+        overview_data = [float(s['total'] or 0) for s in monthly_sales]
+    except Exception as e:
+        print(f"Error in monthly sales query: {e}")
+        overview_labels = ["No Data"]
+        overview_data = [0.0]
 
-    # Total Cost (Sum of product costs based on quantities sold)
-    # Assuming each transaction has a quantity and we use the product's cost
-    transactions = Transaction.objects.select_related('item')
-    total_cost = 0
-    for transaction in transactions:
-        try:
-            product = Product.objects.get(name=transaction.item)  # Adjust based on how you link items to products
-            total_cost += product.cost * transaction.quantity  # Adjust if 'cost' field name differs
-        except Product.DoesNotExist:
-            continue
-    cost_progress = min(100, (total_cost / 10000) * 100)  # Example: 100% at $10,000
+    # Fallback if no data exists
+    if not overview_labels:
+        overview_labels = ["No Data"]
+        overview_data = [0.0]
 
-    # Products Sold (Sum of quantities from transactions)
-    products_sold = Transaction.objects.aggregate(total=Sum('quantity'))['total'] or 0
-    products_progress = min(100, (products_sold / 10000) * 100)  # Example: 100% at 10,000 units
+    # Total Sales, Cost, and Products Sold (Monthly by default, will be updated dynamically)
+    try:
+        total_sales = Transaction.objects.annotate(total=Sum(F('quantity') * F('price'))).aggregate(total=Sum('total'))['total'] or 0
+        sales_progress = min(100, (total_sales / 50000) * 100)  # Example: 100% at $50,000
+
+        transactions = Transaction.objects.all()
+        total_cost = 0
+        for transaction in transactions:
+            try:
+                product = Product.objects.get(name=transaction.item)  # Match item name to Product.name
+                total_cost += product.price * transaction.quantity  # Adjust if 'cost' field name differs
+            except Product.DoesNotExist:
+                continue
+            except Exception as e:
+                print(f"Error calculating cost for transaction {transaction.id}: {e}")
+        cost_progress = min(100, (total_cost / 10000) * 100)  # Example: 100% at $10,000
+
+        products_sold = Transaction.objects.aggregate(total=Sum('quantity'))['total'] or 0
+        products_progress = min(100, (products_sold / 10000) * 100)  # Example: 100% at 10,000 units
+    except Exception as e:
+        print(f"Error calculating KPIs: {e}")
+        total_sales, total_cost, products_sold = 0.0, 0.0, 0
+        sales_progress, cost_progress, products_progress = 0, 0, 0
 
     # Cashiers (Employees with their total sales, inferred from transactions)
-    # Assuming Transaction has a cashier field linking to Employee
-    cashiers = EmployeeProfile.objects.all().annotate(total_sales=Sum('transaction__total_price'))
+    try:
+        cashiers = EmployeeProfile.objects.filter(role='cashier').annotate(total_sales=Sum(F('transaction__quantity') * F('transaction__price')))
+    except Exception as e:
+        print(f"Error fetching cashiers: {e}")
+        cashiers = EmployeeProfile.objects.filter(role='cashier')  # Fallback with no sales data
 
     # Recent Transactions (Last 10 transactions, for example)
-    recent_transactions = Transaction.objects.order_by('-timestamp')[:10]
-
-    # Overview Chart Data (Monthly sales by default)
-    monthly_sales = Transaction.objects.values('timestamp__month', 'timestamp__year').annotate(total=Sum('total_price')).order_by('timestamp')
-    overview_labels = [f"{s['timestamp__month']}/{s['timestamp__year']}" for s in monthly_sales]
-    overview_data = [float(s['total']) for s in monthly_sales]
+    try:
+        recent_transactions = Transaction.objects.order_by('-timestamp')[:10]
+    except Exception as e:
+        print(f"Error fetching recent transactions: {e}")
+        recent_transactions = []
 
     context = {
         'total_sales': total_sales,
@@ -93,6 +121,78 @@ def admin_dashboard(request):
     }
     return render(request, 'manager/index.html', context)
 
+# AJAX endpoints for chart data by time period
+def dashboard_data(request, period):
+    today = datetime.now().date()
+    try:
+        if period == 'daily':
+            start_date = today - timedelta(days=7)  # Last 7 days for daily view
+            transactions = Transaction.objects.filter(timestamp__date__gte=start_date).annotate(total=Sum(F('quantity') * F('price'))).values('timestamp__date').annotate(total=Sum('total')).order_by('timestamp__date')
+            labels = [t['timestamp__date'].strftime('%Y-%m-%d') for t in transactions if t['total'] is not None]
+            data = [float(t['total'] or 0) for t in transactions]
+        elif period == 'weekly':
+            start_date = today - timedelta(weeks=4)  # Last 4 weeks for weekly view
+            transactions = Transaction.objects.filter(timestamp__date__gte=start_date).annotate(total=Sum(F('quantity') * F('price'))).values('timestamp__week', 'timestamp__year').annotate(total=Sum('total')).order_by('timestamp__year', 'timestamp__week')
+            labels = [f"Week {t['timestamp__week']}/{t['timestamp__year']}" for t in transactions if t['total'] is not None]
+            data = [float(t['total'] or 0) for t in transactions]
+        elif period == 'monthly':
+            transactions = Transaction.objects.values('timestamp__month', 'timestamp__year').annotate(total=Sum(F('quantity') * F('price'))).order_by('timestamp')
+            labels = [f"{t['timestamp__month']}/{t['timestamp__year']}" for t in transactions if t['total'] is not None]
+            data = [float(t['total'] or 0) for t in transactions]
+        else:  # yearly
+            transactions = Transaction.objects.values('timestamp__year').annotate(total=Sum(F('quantity') * F('price'))).order_by('timestamp')
+            labels = [str(t['timestamp__year']) for t in transactions if t['total'] is not None]
+            data = [float(t['total'] or 0) for t in transactions]
+
+        # Fallback if no data exists
+        if not labels:
+            labels = ["No Data"]
+            data = [0.0]
+    except Exception as e:
+        print(f"Error in dashboard_data for {period}: {e}")
+        labels = ["No Data"]
+        data = [0.0]
+
+    return JsonResponse({'labels': labels, 'sales': data})
+
+# AJAX endpoint for KPI data by time period
+def dashboard_kpis(request, period):
+    today = datetime.now().date()
+    try:
+        if period == 'daily':
+            start_date = today - timedelta(days=7)  # Last 7 days
+            transactions = Transaction.objects.filter(timestamp__date__gte=start_date)
+        elif period == 'weekly':
+            start_date = today - timedelta(weeks=4)  # Last 4 weeks
+            transactions = Transaction.objects.filter(timestamp__date__gte=start_date)
+        elif period == 'monthly':
+            # Filter for the current month
+            transactions = Transaction.objects.filter(timestamp__year=datetime.now().year, timestamp__month=datetime.now().month)
+        else:  # yearly
+            # Filter for the current year
+            transactions = Transaction.objects.filter(timestamp__year=datetime.now().year)
+
+        total_sales = transactions.annotate(total=Sum(F('quantity') * F('price'))).aggregate(total=Sum('total'))['total'] or 0
+        total_cost = 0
+        for transaction in transactions:
+            try:
+                product = Product.objects.get(name=transaction.item)  # Match item name to Product.name
+                total_cost += product.price * transaction.quantity  # Adjust if 'cost' field name differs
+            except Product.DoesNotExist:
+                continue
+            except Exception as e:
+                print(f"Error calculating cost for transaction {transaction.id}: {e}")
+                continue
+        products_sold = transactions.aggregate(total=Sum('quantity'))['total'] or 0
+    except Exception as e:
+        print(f"Error in dashboard_kpis for {period}: {e}")
+        total_sales, total_cost, products_sold = 0.0, 0.0, 0
+
+    return JsonResponse({
+        'total_sales': float(total_sales),
+        'total_cost': float(total_cost),
+        'products_sold': int(products_sold),
+    })
 # Cashier dashboard
 @login_required
 def cashier_dashboard(request):
@@ -175,45 +275,166 @@ def showhistory(request):
     # print(data)  # For debugging
     return JsonResponse(data)
 
+@login_required
 def mba_recommendations(request):
-    if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        csv_file = request.FILES.get("csv_file")
-        if not csv_file:
-            return JsonResponse({"success": False, "message": "No file uploaded"}, status=400)
+    if request.method == "POST":
+        if 'csv_file' in request.FILES:
+            csv_file = request.FILES['csv_file']
+            
+            try:
+                df = pd.read_csv(csv_file)
 
-        # Save the uploaded file temporarily
-        temp_csv_path = os.path.join("temp", "uploaded_csv.csv")
-        os.makedirs("temp", exist_ok=True)  # Create temp directory if it doesn't exist
-        with open(temp_csv_path, "wb") as f:
-            for chunk in csv_file.chunks():
-                f.write(chunk)
+                required_columns = ['invoice_no', 'item']
+                if not all(col in df.columns for col in required_columns):
+                    messages.error(request, "CSV must contain 'InvoiceNo' and 'item' columns.")
+                    return render(request, 'manager/mba_recommendations.html')
 
-        try:
-            # Call perform_market_basket_analysis with CSV path
-            results = market_basket.perform_market_basket_analysis(data_source="csv", csv_path=temp_csv_path)
+                basket = (df.groupby(['invoice_no', 'item'])['item']
+                          .count().unstack().reset_index().fillna(0)
+                          .set_index('invoice_no'))
+                basket = basket.applymap(lambda x: 1 if x > 0 else 0)
 
-            if "error" in results:
-                return JsonResponse({"success": False, "message": results["error"]}, status=500)
+                frequent_itemsets = apriori(basket, min_support=0.01, use_colnames=True)
+                rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+                rules = rules.sort_values(by='lift', ascending=False)
 
-            # Format results for JSON response compatible with your JS
-            return JsonResponse({
-                "success": True,
-                "message": "Analysis completed",
-                "results": {
-                    "recommendations": results["mba_recommendations"],
-                    "top_selling": results["top_selling"],
-                    "least_selling": results["least_selling"]
+                recommendations = []
+                for _, row in rules.iterrows():
+                    recommendations.append({
+                        'antecedents': ', '.join(list(row['antecedents'])),
+                        'consequents': ', '.join(list(row['consequents'])),
+                        'support': float(row['support']),
+                        'confidence': float(row['confidence']),
+                        'lift': float(row['lift']),
+                    })
+
+                item_counts = df['item'].value_counts().head(10)
+                top_selling = [{'item': item, 'count': int(count)} for item, count in item_counts.items()]
+
+                least_selling = [{'item': item, 'count': int(count)} for item, count in df['item'].value_counts().tail(10).items()]
+
+                if 'Date' in df.columns:
+                    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+                    print(f"Date column parsed successfully. Sample dates: {df['Date'].head().tolist()}")
+                    # Convert Timestamp to string before storing in session
+                    df['month'] = df['Date'].dt.month
+                    df['year'] = df['Date'].dt.year
+                    product_sales = df.groupby(['month', 'year', 'item']).size().reset_index(name='count')
+                    product_sales = product_sales.groupby('item')['count'].sum().reset_index()
+                    # Convert Date to string only for session storage
+                    df['Date'] = df['Date'].astype(str)
+                else:
+                    print("No Date column, using overall counts")
+                    product_sales = df['item'].value_counts().reset_index()
+                    product_sales.columns = ['item', 'count']
+
+                product_sales = product_sales.sort_values(by='count', ascending=False).to_dict('records')
+                print(f"Initial product sales data: {product_sales}")
+
+                # Store the DataFrame in the session
+                session_key = request.session.session_key or "Not set yet"
+                print(f"Before saving session in mba_recommendations. Session key: {session_key}")
+                request.session['mba_data'] = df.to_dict()
+                request.session.modified = True  # Force session save
+                print(f"Session data stored successfully in mba_recommendations. Session key: {request.session.session_key}, Columns: {list(df.to_dict().keys())}")
+
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'CSV analyzed successfully!',
+                        'results': {
+                            'recommendations': recommendations,
+                            'top_selling': top_selling,
+                            'least_selling': least_selling,
+                            'product_sales': product_sales,
+                        }
+                    })
+
+                context = {
+                    'recommendations': recommendations,
+                    'top_selling': top_selling,
+                    'least_selling': least_selling,
+                    'product_sales': product_sales,
                 }
-            })
-        except Exception as e:
-            return JsonResponse({"success": False, "message": f"Error processing CSV: {str(e)}"}, status=500)
-        finally:
-            # Clean up temporary file
-            if os.path.exists(temp_csv_path):
-                os.remove(temp_csv_path)
+                return render(request, 'manager/mba_recommendation.html', context)
 
-    return render(request, "manager/mba_recommendation.html")
+            except Exception as e:
+                messages.error(request, f"Error processing CSV: {str(e)}")
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'message': f"Error processing CSV: {str(e)}"
+                    })
+        else:
+            messages.error(request, "Please upload a CSV file.")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': "Please upload a CSV file."
+                })
 
+    return render(request, 'manager/mba_recommendation.html')
+
+@login_required
+def mba_product_sales(request, period):
+    try:
+        session_key = request.session.session_key or "Not set"
+        print(f"In mba_product_sales. Session key: {session_key}")
+        df_dict = request.session.get('mba_data')
+        if not df_dict:
+            print(f"No session data found for mba_product_sales. Session key: {request.session.session_key}")
+            return JsonResponse({'error': 'No data available. Please upload a CSV file first.'}, status=400)
+
+        df = pd.DataFrame.from_dict(df_dict)
+        print(f"Loaded DataFrame with columns: {df.columns.tolist()}")
+        if 'Date' not in df.columns:
+            print("No Date column in DataFrame, using overall counts")
+            product_sales = df['item'].value_counts().reset_index()
+            product_sales.columns = ['item', 'count']
+            product_sales = product_sales.to_dict('records')
+            return JsonResponse({'product_sales': product_sales})
+
+        # Convert string back to datetime for processing
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        print(f"Date column after parsing: {df['Date'].head().tolist()}")
+        today = datetime.now()
+        print(f"Current date for filtering: {today}")
+
+        if period == 'weekly':
+            print("Processing weekly product sales")
+            start_date = today - timedelta(weeks=4)
+            print(f"Weekly start date: {start_date}")
+            df_period = df[df['Date'] >= start_date]
+            if df_period.empty:
+                print(f"No data for the last 4 weeks. Date range in data: {df['Date'].min()} to {df['Date'].max()}")
+                return JsonResponse({'error': 'No data available for the last 4 weeks.'}, status=400)
+            df_period['week'] = df_period['Date'].dt.isocalendar().week
+            df_period['year'] = df_period['Date'].dt.year
+            product_sales = df_period.groupby(['year', 'week', 'item']).size().reset_index(name='count')
+        elif period == 'monthly':
+            print("Processing monthly product sales")
+            df_period = df
+            df_period['month'] = df_period['Date'].dt.month
+            df_period['year'] = df_period['Date'].dt.year
+            product_sales = df_period.groupby(['month', 'year', 'item']).size().reset_index(name='count')
+        elif period == 'yearly':
+            print("Processing yearly product sales")
+            df_period = df
+            df_period['year'] = df_period['Date'].dt.year
+            product_sales = df_period.groupby(['year', 'item']).size().reset_index(name='count')
+        else:
+            print(f"Invalid period: {period}")
+            return JsonResponse({'error': f'Invalid period: {period}'}, status=400)
+
+        product_sales = product_sales.groupby('item')['count'].sum().reset_index()
+        product_sales = product_sales.sort_values(by='count', ascending=False).to_dict('records')
+        print(f"Product sales for {period}: {product_sales}")
+        return JsonResponse({'product_sales': product_sales})
+
+    except Exception as e:
+        print(f"Error in mba_product_sales: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+    
 def generateInvoiceNumber():
     # Use only date (YYYYMMDD) and a 3-digit sequential number for the day
     today = datetime.datetime.now().strftime('%Y%m%d')
@@ -406,17 +627,3 @@ def download_transactions_csv(request):
 
     return response
 
-
-
-# AJAX endpoints for chart updates (optional)
-def dashboard_data_monthly(request):
-    monthly_sales = Transaction.objects.values('timestamp__month', 'timestamp__year').annotate(total=Sum('total_price')).order_by('timestamp')
-    labels = [f"{s['timestamp__month']}/{s['timestamp__year']}" for s in monthly_sales]
-    data = [float(s['total']) for s in monthly_sales]
-    return JsonResponse({'labels': labels, 'sales': data})
-
-def dashboard_data_yearly(request):
-    yearly_sales = Transaction.objects.values('timestamp__year').annotate(total=Sum('total_price')).order_by('timestamp')
-    labels = [str(s['timestamp__year']) for s in yearly_sales]
-    data = [float(s['total']) for s in yearly_sales]
-    return JsonResponse({'labels': labels, 'sales': data})

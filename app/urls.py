@@ -5,6 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     #path('', views.index, name='index'),  
@@ -21,8 +22,9 @@ urlpatterns = [
     path('save-transaction/', views.save_transaction, name='save_transaction'),
     path('transaction-history/', views.transaction_history, name='transaction_history'),
     path('transactions/download/csv/', views.download_transactions_csv, name='download_transactions_csv'),
-    path('data/monthly/', views.dashboard_data_monthly, name='dashboard_data_monthly'),
-    path('data/yearly/', views.dashboard_data_yearly, name='dashboard_data_yearly'),
+   path('dashboard/data/<str:period>/', views.dashboard_data, name='dashboard_data'),  # Added for chart data
+    path('dashboard/kpis/<str:period>/', views.dashboard_kpis, name='dashboard_kpis'), 
+     path('mba_product_sales/<str:period>/', views.mba_product_sales, name='mba_product_sales'),  # New endpoint # Added for KPI data
 ]
 
 if settings.DEBUG:

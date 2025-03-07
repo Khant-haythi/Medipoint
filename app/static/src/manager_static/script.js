@@ -39,19 +39,20 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (resultsDiv) resultsDiv.classList.add("hidden");
 
-            const url = window.MBA_URL || "/mba_recommendations/";
+            const url = window.MBA_URL || "/recommendations/";
             console.log("Fetching from URL:", url);
             fetch(url, {
                 method: "POST",
                 body: formData,
                 headers: {
-                    "X-Requested-With": "XMLHttpRequest"
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": getCSRFToken() // Ensure CSRF token is included
                 }
             })
             .then(response => {
-                console.log("Response status:", response.status);
+                console.log("Response status:", response.status, response.statusText);
                 if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.status}`);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 return response.json();
             })
@@ -60,7 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (data.success) {
                     csvUploaded = true;
                     localStorage.setItem('csvUploaded', 'true');  // Persist to localStorage
-                    // If using client-side approach
                     if (data.df_dict) {
                         mbaData = data.df_dict;
                         localStorage.setItem('mbaData', JSON.stringify(mbaData));
@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                         `;
                     }
-                    populateResults(data.results);
+                    populateResults(data); // Ensure full data object is passed
                     if (resultsDiv) resultsDiv.classList.remove("hidden");
                 } else {
                     if (messagesDiv) {
@@ -86,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch(error => {
                 console.error("Fetch error:", error);
+                const messagesDiv = document.getElementById("messages");
                 if (messagesDiv) {
                     messagesDiv.innerHTML = `
                         <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
@@ -93,40 +94,64 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     `;
                 }
+                // Ensure resultsDiv is hidden on error
+                const resultsDiv = document.getElementById("results");
+                if (resultsDiv) resultsDiv.classList.add("hidden");
             });
         });
     }
 });
 
-// Function to populate MBA results with charts
-function populateResults(results) {
-    console.log("Populating results with:", results);
+// Function to populate MBA results with charts, prediction details, and predictive accuracy
+function populateResults(data) {
+    console.log("Populating results with:", data); // Log the full data object
     const recommendationsTable = document.getElementById("recommendationsTable");
     const topSellingCanvas = document.getElementById("topSellingChart");
     const leastSellingCanvas = document.getElementById("leastSellingChart");
     const productSalesPieCanvas = document.getElementById("productSalesPieChart");
+    const predictionDetailsTable = document.getElementById("predictionDetailsTable");
+    const predictiveAccuracyDiv = document.getElementById("predictiveAccuracy");
 
-    // Log canvas availability
+    // Log element availability
     console.log("Top selling canvas:", topSellingCanvas);
     console.log("Least selling canvas:", leastSellingCanvas);
     console.log("Product sales pie canvas:", productSalesPieCanvas);
+    console.log("Prediction details table:", predictionDetailsTable);
+    console.log("Predictive accuracy div:", predictiveAccuracyDiv);
 
     // Clear existing content
     if (recommendationsTable) recommendationsTable.innerHTML = "";
+    if (predictionDetailsTable) predictionDetailsTable.querySelector("tbody").innerHTML = "";
+
+    // Safely handle data.results being undefined
+    if (!data || !data.results || typeof data.results !== 'object') {
+        console.error("data or data.results is undefined or not an object:", data);
+        const messagesDiv = document.getElementById("messages");
+        if (messagesDiv) {
+            messagesDiv.innerHTML = `
+                <div class="p-4 text-sm rounded-lg shadow-md animate-bounceIn bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                    Error: No recommendation results available. Check the CSV or server logs.
+                </div>
+            `;
+        }
+        return; // Exit the function if results are invalid
+    }
 
     // Populate Recommendations Table
-    if (results.recommendations && results.recommendations.length > 0) {
-        results.recommendations.forEach(item => {
+    if (data.results.recommendations && data.results.recommendations.length > 0) {
+        data.results.recommendations.forEach(item => {
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.antecedents}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.consequents}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.support.toFixed(4)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.confidence.toFixed(4)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.lift.toFixed(4)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.antecedents || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.consequents || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.support ? item.support.toFixed(4) : 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.confidence ? item.confidence.toFixed(4) : 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${item.lift ? item.lift.toFixed(4) : 'N/A'}</td>
             `;
             recommendationsTable.appendChild(row);
         });
+    } else {
+        console.log("No recommendations data available");
     }
 
     // Destroy existing charts safely with detailed logging
@@ -155,10 +180,10 @@ function populateResults(results) {
     }
 
     // Populate Top Selling Bar Graph
-    if (results.top_selling && results.top_selling.length > 0 && topSellingCanvas) {
+    if (data.results.top_selling && data.results.top_selling.length > 0 && topSellingCanvas) {
         try {
-            const labels = results.top_selling.map(product => product.item);
-            const data = results.top_selling.map(product => product.count);
+            const labels = data.results.top_selling.map(product => product.item);
+            const dataValues = data.results.top_selling.map(product => product.count);
 
             window.topSellingChart = new Chart(topSellingCanvas.getContext("2d"), {
                 type: "bar",
@@ -166,7 +191,7 @@ function populateResults(results) {
                     labels: labels,
                     datasets: [{
                         label: "Sales Count",
-                        data: data,
+                        data: dataValues,
                         backgroundColor: "rgba(54, 162, 235, 0.8)",
                         borderColor: "rgba(54, 162, 235, 1)",
                         borderWidth: 1,
@@ -209,10 +234,10 @@ function populateResults(results) {
     }
 
     // Populate Least Selling Bar Graph
-    if (results.least_selling && results.least_selling.length > 0 && leastSellingCanvas) {
+    if (data.results.least_selling && data.results.least_selling.length > 0 && leastSellingCanvas) {
         try {
-            const labels = results.least_selling.map(product => product.item);
-            const data = results.least_selling.map(product => product.count);
+            const labels = data.results.least_selling.map(product => product.item);
+            const dataValues = data.results.least_selling.map(product => product.count);
 
             window.leastSellingChart = new Chart(leastSellingCanvas.getContext("2d"), {
                 type: "bar",
@@ -220,7 +245,7 @@ function populateResults(results) {
                     labels: labels,
                     datasets: [{
                         label: "Sales Count",
-                        data: data,
+                        data: dataValues,
                         backgroundColor: "rgba(255, 99, 132, 0.8)",
                         borderColor: "rgba(255, 99, 132, 1)",
                         borderWidth: 1,
@@ -263,119 +288,158 @@ function populateResults(results) {
     }
 
     // Initialize Product Sales Pie Chart with default data (monthly)
-    if (results.product_sales && results.product_sales.length > 0 && productSalesPieCanvas) {
-        createProductSalesPieChart(results.product_sales, productSalesPieCanvas, "Monthly");
+    if (data.results.product_sales && data.results.product_sales.length > 0 && productSalesPieCanvas) {
+        createProductSalesPieChart(data.results.product_sales, productSalesPieCanvas, "Monthly");
     } else {
         console.log("Product sales pie chart not created: missing data or canvas", {
-            product_sales: results.product_sales,
+            product_sales: data.results.product_sales,
             canvas: productSalesPieCanvas
         });
+    }
+
+    // Populate Prediction Details Table
+    if (predictionDetailsTable) { // Check if the table element exists
+        if (data.prediction_details && data.prediction_details.length > 0) {
+            data.prediction_details.forEach(detail => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${detail.transaction || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${detail.rule_applied || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${detail.predicted_consequent || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${detail.actual_consequent || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${detail.correct !== undefined ? (detail.correct ? 'Yes' : 'No') : 'N/A'}</td>
+                `;
+                predictionDetailsTable.querySelector("tbody").appendChild(row);
+            });
+        } else {
+            console.log("No prediction details to display");
+        }
+    } else {
+        console.error("Prediction details table element not found in DOM");
+    }
+
+    // Populate Predictive Accuracy
+    if (predictiveAccuracyDiv) {
+        // Check if predictive_accuracy is a valid number
+        if (typeof data.predictive_accuracy === 'number' && !isNaN(data.predictive_accuracy)) {
+            if (data.predictive_accuracy === 0) {
+                predictiveAccuracyDiv.textContent = "Predictive Accuracy: Insufficient data for prediction.";
+            } else {
+                predictiveAccuracyDiv.textContent = `Predictive Accuracy: ${data.predictive_accuracy.toFixed(2)}%`;
+            }
+        } else {
+            console.warn("predictive_accuracy is not a valid number:", data.predictive_accuracy);
+            predictiveAccuracyDiv.textContent = "Predictive Accuracy: Data unavailable.";
+        }
+    } else {
+        console.error("Predictive accuracy div not found");
     }
 }
 
 // Function to create or update the Product Sales Pie Chart
 function createProductSalesPieChart(data, canvas, periodLabel) {
-  // Destroy existing chart if it exists
-  if (productSalesPieChart && typeof productSalesPieChart.destroy === "function") {
-      productSalesPieChart.destroy();
-      console.log("Destroyed existing productSalesPieChart");
-  }
+    // Destroy existing chart if it exists
+    if (productSalesPieChart && typeof productSalesPieChart.destroy === "function") {
+        productSalesPieChart.destroy();
+        console.log("Destroyed existing productSalesPieChart");
+    }
 
-  // Limit to top 10 products, group the rest into "Others"
-  const topN = 10;
-  let topData = data.slice(0, topN);
-  const othersCount = data.slice(topN).reduce((sum, item) => sum + item.count, 0);
-  if (othersCount > 0) {
-      topData.push({ item: "Others", count: othersCount });
-  }
+    // Limit to top 10 products, group the rest into "Others"
+    const topN = 10;
+    let topData = data.slice(0, topN);
+    const othersCount = data.slice(topN).reduce((sum, item) => sum + item.count, 0);
+    if (othersCount > 0) {
+        topData.push({ item: "Others", count: othersCount });
+    }
 
-  try {
-      const labels = topData.map(product => product.item);
-      const values = topData.map(product => product.count);
-      const total = values.reduce((sum, val) => sum + val, 0);
-      // Simplified color scheme for top 10 + Others
-      const backgroundColors = labels.map((_, index) => {
-          const hue = (index * 360 / topN) % 360; // Evenly spaced hues
-          return index < topN ? `hsl(${hue}, 70%, 60%)` : 'hsl(0, 0%, 60%)'; // Grey for "Others"
-      });
+    try {
+        const labels = topData.map(product => product.item);
+        const values = topData.map(product => product.count);
+        const total = values.reduce((sum, val) => sum + val, 0);
+        // Simplified color scheme for top 10 + Others
+        const backgroundColors = labels.map((_, index) => {
+            const hue = (index * 360 / topN) % 360; // Evenly spaced hues
+            return index < topN ? `hsl(${hue}, 70%, 60%)` : 'hsl(0, 0%, 60%)'; // Grey for "Others"
+        });
 
-      productSalesPieChart = new Chart(canvas.getContext("2d"), {
-          type: "pie",
-          data: {
-              labels: labels,
-              datasets: [{
-                  label: `Product Sales (${periodLabel})`,
-                  data: values,
-                  backgroundColor: backgroundColors,
-                  borderColor: "#fff",
-                  borderWidth: 1,
-                  hoverOffset: 20,
-              }]
-          },
-          options: {
-              responsive: true,
-              maintainAspectRatio: false, // Allow chart to fill container
-              plugins: {
-                  legend: {
-                      position: "right", // Move legend to the right for better visibility
-                      labels: {
-                          font: { size: 14 }, // Larger font for legend
-                          color: "#333",
-                          boxWidth: 20,
-                          padding: 15,
-                          generateLabels: function(chart) {
-                              const data = chart.data;
-                              return data.labels.map((label, i) => {
-                                  const value = data.datasets[0].data[i];
-                                  const percentage = ((value / total) * 100).toFixed(1);
-                                  return {
-                                      text: `${label}: ${percentage}% (${value} units)`,
-                                      fillStyle: data.datasets[0].backgroundColor[i],
-                                      strokeStyle: data.datasets[0].borderColor,
-                                      lineWidth: data.datasets[0].borderWidth,
-                                      hidden: isNaN(data.datasets[0].data[i]) || data.datasets[0].data[i] === null,
-                                      index: i
-                                  };
-                              });
-                          }
-                      }
-                  },
-                  title: {
-                      display: true,
-                      text: `Product Sales Distribution (${periodLabel})`,
-                      font: { size: 20, weight: "bold" }, // Larger title
-                      color: "#333",
-                      padding: 20
-                  },
-                  tooltip: {
-                      callbacks: {
-                          label: function(context) {
-                              const label = context.label || '';
-                              const value = context.raw || 0;
-                              const percentage = ((value / total) * 100).toFixed(1);
-                              return `${label}: ${value} units (${percentage}%)`;
-                          }
-                      },
-                      bodyFont: { size: 14 },
-                      titleFont: { size: 16 }
-                  }
-              },
-              animation: { duration: 1000, easing: "easeOutBounce" },
-              elements: {
-                  arc: {
-                      borderWidth: 2,
-                  }
-              },
-              layout: {
-                  padding: 30,
-              }
-          }
-      });
-      console.log(`Product sales pie chart created successfully for ${periodLabel}:`, productSalesPieChart);
-  } catch (error) {
-      console.error(`Error creating product sales pie chart for ${periodLabel}:`, error);
-  }
+        productSalesPieChart = new Chart(canvas.getContext("2d"), {
+            type: "pie",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Product Sales (${periodLabel})`,
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderColor: "#fff",
+                    borderWidth: 1,
+                    hoverOffset: 20,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Allow chart to fill container
+                plugins: {
+                    legend: {
+                        position: "right", // Move legend to the right for better visibility
+                        labels: {
+                            font: { size: 14 }, // Larger font for legend
+                            color: "#333",
+                            boxWidth: 20,
+                            padding: 15,
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                return data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return {
+                                        text: `${label}: ${percentage}% (${value} units)`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        strokeStyle: data.datasets[0].borderColor,
+                                        lineWidth: data.datasets[0].borderWidth,
+                                        hidden: isNaN(data.datasets[0].data[i]) || data.datasets[0].data[i] === null,
+                                        index: i
+                                    };
+                                });
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: `Product Sales Distribution (${periodLabel})`,
+                        font: { size: 20, weight: "bold" }, // Larger title
+                        color: "#333",
+                        padding: 20
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${value} units (${percentage}%)`;
+                            }
+                        },
+                        bodyFont: { size: 14 },
+                        titleFont: { size: 16 }
+                    }
+                },
+                animation: { duration: 1000, easing: "easeOutBounce" },
+                elements: {
+                    arc: {
+                        borderWidth: 2,
+                    }
+                },
+                layout: {
+                    padding: 30,
+                }
+            }
+        });
+        console.log(`Product sales pie chart created successfully for ${periodLabel}:`, productSalesPieChart);
+    } catch (error) {
+        console.error(`Error creating product sales pie chart for ${periodLabel}:`, error);
+    }
 }
+
 // Function to update the Product Sales Pie Chart based on the selected period
 function updateProductSalesChart(period) {
     const productSalesPieCanvas = document.getElementById("productSalesPieChart");
@@ -403,15 +467,14 @@ function updateProductSalesChart(period) {
     fetch(url, {
         method: "GET",
         headers: {
-            "X-Requested-With": "XMLHttpRequest"
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": getCSRFToken() // Ensure CSRF token is included
         }
     })
     .then(response => {
         console.log(`Response status for ${period}:`, response.status, response.statusText);
         if (!response.ok) {
-            return response.json().then(errorData => {
-                throw new Error(`Network response was not ok: ${response.status} - ${errorData.error || response.statusText}`);
-            });
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
         return response.json();
     })

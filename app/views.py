@@ -29,6 +29,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import F
 from django.db.models.functions import ExtractHour, ExtractDay
 from datetime import datetime  
+from scipy.stats import chi2_contingency
+from sklearn.model_selection import train_test_split
+import logging
 
 # Login view
 def login_view(request):
@@ -275,68 +278,151 @@ def showhistory(request):
     # print(data)  # For debugging
     return JsonResponse(data)
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+
 @login_required
 def mba_recommendations(request):
+    if not request.session.session_key:
+        request.session.create()
     if request.method == "POST":
         if 'csv_file' in request.FILES:
             csv_file = request.FILES['csv_file']
             
             try:
+                # Read CSV and log the first few rows for debugging
                 df = pd.read_csv(csv_file)
+                logger.debug(f"CSV columns: {df.columns.tolist()}")
+                logger.debug(f"First 5 rows: {df.head().to_dict()}")
 
                 required_columns = ['invoice_no', 'item']
                 if not all(col in df.columns for col in required_columns):
-                    messages.error(request, "CSV must contain 'InvoiceNo' and 'item' columns.")
-                    return render(request, 'manager/mba_recommendations.html')
+                    messages.error(request, "CSV must contain 'invoice_no' and 'item' columns.")
+                    return render(request, 'manager/mba_recommendation.html')
 
+                # Ensure invoice_no and item are strings
+                df['invoice_no'] = df['invoice_no'].astype(str)
+                df['item'] = df['item'].astype(str)
+
+                # Create basket and convert to boolean
                 basket = (df.groupby(['invoice_no', 'item'])['item']
                           .count().unstack().reset_index().fillna(0)
                           .set_index('invoice_no'))
-                basket = basket.applymap(lambda x: 1 if x > 0 else 0)
+                basket = (basket > 0).astype(bool)
+                logger.debug(f"Basket shape: {basket.shape}")
+                logger.debug(f"Basket head: {basket.head().to_dict()}")
 
-                frequent_itemsets = apriori(basket, min_support=0.01, use_colnames=True)
+                # Split data into training (80%) and test (20%) sets for predictive accuracy
+                train_idx, test_idx = train_test_split(basket.index, test_size=0.2, random_state=42)
+                train_basket = basket.loc[train_idx]
+                test_basket = basket.loc[test_idx]
+                logger.debug(f"Training set size: {train_basket.shape[0]}, Test set size: {test_basket.shape[0]}")
+
+                # Run Apriori algorithm on the full dataset for recommendations
+                frequent_itemsets = apriori(basket, min_support=0.005, use_colnames=True)  # Lowered min_support
+                logger.debug(f"Frequent itemsets shape: {frequent_itemsets.shape}")
+                if frequent_itemsets.empty:
+                    logger.warning("No frequent itemsets found. Try lowering min_support.")
+                    messages.warning(request, "No frequent itemsets found. Please adjust min_support or dataset.")
+                    return render(request, 'manager/mba_recommendation.html')
+
+                # Generate and sort association rules
                 rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
-                rules = rules.sort_values(by='lift', ascending=False)
+                if rules.empty:
+                    logger.warning("No association rules generated. Try lowering min_threshold or min_support.")
+                    messages.warning(request, "No association rules generated. Please adjust parameters.")
+                    return render(request, 'manager/mba_recommendation.html')
 
+                # Filter rules by confidence > 0.5
+                rules = rules[rules['confidence'] > 0.5].sort_values(['lift', 'confidence'], ascending=[False, False])
+                mba_recommendations_df = rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']].head(10)
+                mba_recommendations_df['antecedents'] = mba_recommendations_df['antecedents'].apply(lambda x: ', '.join(list(x)))
+                mba_recommendations_df['consequents'] = mba_recommendations_df['consequents'].apply(lambda x: ', '.join(list(x)))
+                logger.debug(f"MBA recommendations shape: {mba_recommendations_df.shape}")
+                logger.debug(f"MBA recommendations: {mba_recommendations_df.to_dict()}")
+
+                # Prepare recommendations list
                 recommendations = []
-                for _, row in rules.iterrows():
+                for row in mba_recommendations_df.itertuples():
                     recommendations.append({
-                        'antecedents': ', '.join(list(row['antecedents'])),
-                        'consequents': ', '.join(list(row['consequents'])),
-                        'support': float(row['support']),
-                        'confidence': float(row['confidence']),
-                        'lift': float(row['lift']),
+                        'antecedents': row.antecedents,
+                        'consequents': row.consequents,
+                        'support': float(row.support),
+                        'confidence': float(row.confidence),
+                        'lift': float(row.lift),
                     })
+
+                # Run Apriori on the training set for predictive accuracy evaluation
+                frequent_itemsets_train = apriori(train_basket, min_support=0.005, use_colnames=True)  # Lowered min_support
+                if frequent_itemsets_train.empty:
+                    logger.warning("No frequent itemsets found in training set. Try lowering min_support.")
+                    predictive_accuracy = 0.0
+                    prediction_details = []
+                else:
+                    rules_train = association_rules(frequent_itemsets_train, metric="lift", min_threshold=1)
+                    if rules_train.empty:
+                        logger.warning("No association rules generated in training set. Try lowering min_threshold.")
+                        predictive_accuracy = 0.0
+                        prediction_details = []
+                    else:
+                        rules_train = rules_train[rules_train['confidence'] > 0.5].sort_values(['lift', 'confidence'], ascending=[False, False]).head(10)
+                        rules_train['antecedents'] = rules_train['antecedents'].apply(lambda x: ', '.join(list(x)))
+                        rules_train['consequents'] = rules_train['consequents'].apply(lambda x: ', '.join(list(x)))
+
+                        # Calculate predictive accuracy and prediction details on the test set
+                        correct_predictions = 0
+                        total_predictions = 0
+                        prediction_details = []
+                        for idx in test_basket.index:
+                            transaction = test_basket.loc[idx]
+                            items_in_transaction = transaction.index[transaction].tolist()
+                            for _, rule in rules_train.iterrows():
+                                ant_items = rule['antecedents'].split(', ')
+                                con_items = rule['consequents'].split(', ')
+                                # Check if all antecedent items are in the transaction
+                                if all(item in items_in_transaction for item in ant_items):
+                                    total_predictions += 1
+                                    predicted_consequent = ', '.join(con_items)
+                                    actual_consequent = 'Present' if all(item in items_in_transaction for item in con_items) else 'Not present'
+                                    is_correct = actual_consequent == 'Present'
+                                    if is_correct:
+                                        correct_predictions += 1
+                                    prediction_details.append({
+                                        'transaction': '{' + ', '.join(items_in_transaction) + '}',
+                                        'rule_applied': rule['antecedents'] + ' -> ' + rule['consequents'],
+                                        'predicted_consequent': predicted_consequent,
+                                        'actual_consequent': actual_consequent,
+                                        'correct': is_correct
+                                    })
+
+                        predictive_accuracy = (correct_predictions / total_predictions) * 100 if total_predictions > 0 else 0
+                        logger.debug(f"Predictive Accuracy: {predictive_accuracy}% ({correct_predictions}/{total_predictions})")
+                        logger.debug(f"Prediction Details: {prediction_details}")
 
                 item_counts = df['item'].value_counts().head(10)
                 top_selling = [{'item': item, 'count': int(count)} for item, count in item_counts.items()]
-
                 least_selling = [{'item': item, 'count': int(count)} for item, count in df['item'].value_counts().tail(10).items()]
 
                 if 'Date' in df.columns:
                     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-                    print(f"Date column parsed successfully. Sample dates: {df['Date'].head().tolist()}")
-                    # Convert Timestamp to string before storing in session
+                    if df['Date'].isna().any():
+                        logger.warning("Some dates are invalid and will be excluded. Invalid rows: %s", df[df['Date'].isna()])
+                        df = df.dropna(subset=['Date'])
+                    logger.debug(f"Date column parsed successfully. Sample dates: {df['Date'].head().to_dict()}")
                     df['month'] = df['Date'].dt.month
                     df['year'] = df['Date'].dt.year
-                    product_sales = df.groupby(['month', 'year', 'item']).size().reset_index(name='count')
-                    product_sales = product_sales.groupby('item')['count'].sum().reset_index()
-                    # Convert Date to string only for session storage
+                    df['quarter'] = df['Date'].dt.quarter
                     df['Date'] = df['Date'].astype(str)
                 else:
-                    print("No Date column, using overall counts")
-                    product_sales = df['item'].value_counts().reset_index()
-                    product_sales.columns = ['item', 'count']
+                    logger.debug("No Date column, using overall counts")
 
-                product_sales = product_sales.sort_values(by='count', ascending=False).to_dict('records')
-                print(f"Initial product sales data: {product_sales}")
-
-                # Store the DataFrame in the session
-                session_key = request.session.session_key or "Not set yet"
-                print(f"Before saving session in mba_recommendations. Session key: {session_key}")
+                session_key = request.session.session_key
+                logger.debug(f"Before saving session in mba_recommendations. Session key: {session_key}")
                 request.session['mba_data'] = df.to_dict()
-                request.session.modified = True  # Force session save
-                print(f"Session data stored successfully in mba_recommendations. Session key: {request.session.session_key}, Columns: {list(df.to_dict().keys())}")
+                request.session.modified = True
+                logger.debug(f"Session data stored successfully in mba_recommendations. Session key: {request.session.session_key}, Columns: {list(df.to_dict().keys())}")
 
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({
@@ -346,19 +432,23 @@ def mba_recommendations(request):
                             'recommendations': recommendations,
                             'top_selling': top_selling,
                             'least_selling': least_selling,
-                            'product_sales': product_sales,
-                        }
+                            'product_sales': [],  # Placeholder for product sales data if implemented
+                        },
+                        'predictive_accuracy': predictive_accuracy,
+                        'prediction_details': prediction_details
                     })
 
                 context = {
                     'recommendations': recommendations,
                     'top_selling': top_selling,
                     'least_selling': least_selling,
-                    'product_sales': product_sales,
+                    'predictive_accuracy': predictive_accuracy,
+                    'prediction_details': prediction_details
                 }
                 return render(request, 'manager/mba_recommendation.html', context)
 
             except Exception as e:
+                logger.error(f"Error processing CSV: {e}")
                 messages.error(request, f"Error processing CSV: {str(e)}")
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({

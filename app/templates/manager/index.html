@@ -21,14 +21,14 @@
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Sales</h3>
                 <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2 total-sales">${{ total_sales|floatformat:2 }}</p>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                    <div class="bg-blue-600 h-2.5 rounded-full sales-progress" style="width: '{% if sales_progress is not none %}{{ sales_progress }}%{% else %}0%{% endif %}'';"></div>
+                    <div class="bg-blue-600 h-2.5 rounded-full sales-progress" style="width: '{% if sales_progress is not none %}{{ sales_progress }}%{% else %}0%{% endif %}';"></div>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Total Cost</h3>
                 <p class="text-2xl font-bold text-pink-600 dark:text-pink-400 mt-2 total-cost">${{ total_cost|floatformat:2 }}</p>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600 mt-2">
-                    <div class="bg-pink-600 h-2.5 rounded-full cost-progress" style="width: {% if cost_progress is not none %}{{ cost_progress }}%{% else %}0%{% endif %};"></div>
+                    <div class="bg-pink-600 h-2.5 rounded-full cost-progress" style="width: '{% if cost_progress is not none %}{{ cost_progress }}%{% else %}0%{% endif %}';"></div>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg shadow dark:bg-gray-700">

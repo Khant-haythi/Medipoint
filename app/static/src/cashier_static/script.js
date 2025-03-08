@@ -88,7 +88,7 @@ if (csvForm) {
 
   // Fetch menu data when the page loads or "Menus" is active
   fetchMenuData();
-
+  
   // Initialize totals on page load
   updateTotals();
 });

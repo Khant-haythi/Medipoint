@@ -51,6 +51,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_SAVE_EVERY_REQUEST = True  #
+
 ROOT_URLCONF = 'Medipoint.urls'
 
 TEMPLATES = [

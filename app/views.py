@@ -288,6 +288,7 @@ def mba_recommendations(request):
     if request.method == "POST" and 'csv_file' in request.FILES:
         csv_file = request.FILES['csv_file']
         try:
+            # Read and validate CSV
             df = pd.read_csv(csv_file).drop_duplicates(subset=['invoice_no', 'item'])
             required_columns = ['invoice_no', 'item']
             if not all(col in df.columns for col in required_columns):
@@ -306,24 +307,22 @@ def mba_recommendations(request):
             if len(basket) < 10:
                 return JsonResponse({'success': False, 'message': "Not enough transactions for analysis."})
 
-            train_idx, test_idx = train_test_split(basket.index, test_size=0.1, random_state=42)
+            train_idx, test_idx = train_test_split(basket.index, test_size=0.2, random_state=42)
             train_basket = basket.loc[train_idx]
             test_basket = basket.loc[test_idx]
 
             frequent_itemsets = apriori(basket, min_support=0.005, use_colnames=True)
             rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1.2)
-            rules = rules[rules['confidence'] > 0.5]  # 
+            rules = rules[rules['confidence'] > 0.5]
 
             if rules.empty:
                 return JsonResponse({'success': False, 'message': "No strong association rules found."})
 
-            
-
             rules['antecedents'] = rules['antecedents'].apply(lambda x: ', '.join(list(x)))
             rules['consequents'] = rules['consequents'].apply(lambda x: ', '.join(list(x)))
 
-            recommendations = rules.sort_values(['lift', 'confidence'], ascending=[False, False]).head(15).to_dict(orient='records')
-            
+            recommendations = rules.sort_values(['lift', 'confidence'], ascending=[False, False]).head(5).to_dict(orient='records')
+
             # Train rules separately
             frequent_itemsets_train = apriori(train_basket, min_support=0.005, use_colnames=True)
             rules_train = association_rules(frequent_itemsets_train, metric="lift", min_threshold=1.2)
@@ -365,6 +364,16 @@ def mba_recommendations(request):
 
             predictive_accuracy = (correct_predictions / total_predictions) * 100 if total_predictions > 0 else "Insufficient data for prediction."
 
+            # Save to session
+            request.session['last_csv_data'] = df.to_json()
+            request.session['predictive_accuracy'] = float(predictive_accuracy) if isinstance(predictive_accuracy, (int, float)) else 0.0
+            request.session['prediction_details'] = prediction_details if prediction_details else "No valid predictions."
+            request.session['recommendations'] = recommendations
+            request.session['top_selling'] = [{'item': item, 'count': int(count)} for item, count in df['item'].value_counts().head(10).items()]
+            request.session['least_selling'] = [{'item': item, 'count': int(count)} for item, count in df['item'].value_counts().tail(10).items()]
+            request.session['csv_uploaded'] = True
+            request.session.modified = True
+
             return JsonResponse({
                 'success': True,
                 'message': 'CSV analyzed successfully!',
@@ -387,6 +396,61 @@ def mba_recommendations(request):
             })
     return render(request, 'manager/mba_recommendation.html')
 
+@login_required
+def validate_recommendations(request):
+    if request.method == "GET":
+        try:
+            if not request.session.get('csv_uploaded', False):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No CSV has been uploaded.',
+                    'predictive_accuracy': 0,
+                    'prediction_details': []
+                })
+            if 'last_csv_data' not in request.session:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No CSV data available for validation.',
+                    'predictive_accuracy': 0,
+                    'prediction_details': []
+                })
+
+            df = pd.read_json(request.session['last_csv_data'])
+            required_columns = ['invoice_no', 'item']
+            if not all(col in df.columns for col in required_columns):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid CSV data in session.',
+                    'predictive_accuracy': 0,
+                    'prediction_details': []
+                })
+
+            predictive_accuracy = request.session.get('predictive_accuracy', 0)
+            prediction_details = request.session.get('prediction_details', [])
+            recommendations = request.session.get('recommendations', [])
+            top_selling = request.session.get('top_selling', [])
+            least_selling = request.session.get('least_selling', [])
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Validation successful.',
+                'results': {
+                    'recommendations': recommendations,
+                    'top_selling': top_selling,
+                    'least_selling': least_selling,
+                    'product_sales': [],
+                },
+                'predictive_accuracy': predictive_accuracy,
+                'prediction_details': prediction_details if prediction_details else "No valid predictions."
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Validation error: {str(e)}',
+                'predictive_accuracy': 0,
+                'prediction_details': []
+            })
+        
 @login_required
 def mba_product_sales(request, period):
     try:

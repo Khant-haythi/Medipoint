@@ -19,10 +19,10 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'price', 'category')  
+    list_display = ('id', 'name', 'price', 'category','productImage')  
     search_fields = ('name', 'category__name', 'description')  # Allow searching by name, category, or description
     list_filter = ('category',)  # Add filters for category
-    readonly_fields = ('productImage',)  # Make productImage read-only in admin (optional)
+      # Make productImage read-only in admin (optional)
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):

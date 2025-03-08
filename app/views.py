@@ -312,16 +312,18 @@ def mba_recommendations(request):
 
             frequent_itemsets = apriori(basket, min_support=0.005, use_colnames=True)
             rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1.2)
-            rules = rules[rules['confidence'] > 0.5].sort_values(['lift', 'confidence'], ascending=[False, False])
+            rules = rules[rules['confidence'] > 0.5]  # 
 
             if rules.empty:
                 return JsonResponse({'success': False, 'message': "No strong association rules found."})
 
+            
+
             rules['antecedents'] = rules['antecedents'].apply(lambda x: ', '.join(list(x)))
             rules['consequents'] = rules['consequents'].apply(lambda x: ', '.join(list(x)))
 
-            recommendations = rules.to_dict(orient="records")[:15]  # Show only 15 recommendations
-
+            recommendations = rules.sort_values(['lift', 'confidence'], ascending=[False, False]).head(15).to_dict(orient='records')
+            
             # Train rules separately
             frequent_itemsets_train = apriori(train_basket, min_support=0.005, use_colnames=True)
             rules_train = association_rules(frequent_itemsets_train, metric="lift", min_threshold=1.2)
@@ -358,6 +360,9 @@ def mba_recommendations(request):
                         'correct': is_correct
                     })
 
+            # Limit prediction_details to 15 entries
+            prediction_details = prediction_details[:15] if prediction_details else []
+
             predictive_accuracy = (correct_predictions / total_predictions) * 100 if total_predictions > 0 else "Insufficient data for prediction."
 
             return JsonResponse({
@@ -381,7 +386,6 @@ def mba_recommendations(request):
                 'prediction_details': []
             })
     return render(request, 'manager/mba_recommendation.html')
-
 
 @login_required
 def mba_product_sales(request, period):
